@@ -5,18 +5,20 @@ import Dashboard from "./pages/dashboard";
 import { Box, Toolbar } from "@mui/material";
 import Sidebar from "./components/dashboard/sidebar";
 import ViewProducts from "./pages/product/viewProducts";
+import AddFeelings from "./pages/feelings/feelings";
 
 function App() {
   return (
     <div className="">
       <BrowserRouter>
         <Box sx={{ display: "flex" }}>
-          <Sidebar />
+          {/* <Sidebar /> */}
           <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-            <Toolbar />
+            {/* <Toolbar /> */}
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/ViewProducts" element={<ViewProducts />} />
+              <Route path="/feelings" element={<AddFeelings />} />
             </Routes>
           </Box>
         </Box>

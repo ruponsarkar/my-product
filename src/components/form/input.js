@@ -1,7 +1,7 @@
 import React from 'react';
 import TextField from '@mui/material/TextField';
 
-export default function Input({label, id, defaultValue, size}) {
+export default function Input({label, id, defaultValue, size, type, value, onChange}) {
   return (
     <div>
         <TextField
@@ -10,6 +10,9 @@ export default function Input({label, id, defaultValue, size}) {
           defaultValue={defaultValue || ''}
           size={size || "small"}
           fullWidth
+          type={type || "text"}
+          value={value || ''}
+          onChange={(e) => onChange(e)}
         />
     </div>
   )

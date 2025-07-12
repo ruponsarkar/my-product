@@ -12,6 +12,7 @@ const Sidebar = () => {
     { text: "Products", icon: <BarChartIcon />, path: "/ViewProducts" },
     { text: "Reports", icon: <BarChartIcon />, path: "/reports" },
     { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
+    { text: "Feelings", icon: <SettingsIcon />, path: "/feelings" },
   ];
 
   return (
