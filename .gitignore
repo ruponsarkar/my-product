@@ -27,3 +27,7 @@ yarn-debug.log*
 yarn-error.log*
 node_modules/
 .cache/
+
+*.jpg
+*.png
+*.jpeg

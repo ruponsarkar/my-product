@@ -6,23 +6,143 @@ import slugify from "slugify";
 import path from "path";
 import fs from "fs";
 
+
+const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+const PUBLIC_PREFIX = "/uploads";
+const publicPath = (filename: string) => `${PUBLIC_PREFIX}/${filename}`;
+
+const removeFile = (filename: string) => {
+  try {
+    const fp = path.join(UPLOADS_DIR, filename);
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  } catch (e) {
+    console.error("removeFile error:", e);
+  }
+};
+
+type MulterFile = Express.Multer.File;
+
 /**
- * Extend Express Request to include files added by multer
+ * Parse attributes payload into an array aligned with files array.
+ * raw may be:
+ *  - object keyed by filename -> { "photo.jpg": { color: ['red'] }, ... }
+ *  - array matching files order -> [ { color: [...] }, { ... } ]
+ *  - single object -> apply to all files (not recommended)
  */
-export interface MulterRequest extends Request {
-  files?:
-    | Express.Multer.File[]
-    | { [fieldname: string]: Express.Multer.File[] };
+function buildAttributesPerFile(raw: any, files: MulterFile[]): (Record<string, string[]>)[] {
+  const empty = () => ({});
+  if (!raw) return files.map(empty);
+
+  let parsed: any = raw;
+  if (typeof raw === "string") {
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      // invalid JSON -> treat as none
+      return files.map(empty);
+    }
+  }
+
+  // If object keyed by filename
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    return files.map((f) => {
+      // prefer originalname, then filename (Multer generated)
+      const key = parsed[f.originalname] ?? parsed[f.filename];
+      return (key && typeof key === "object") ? key : {};
+    });
+  }
+
+  // If it's an array matching files length
+  if (Array.isArray(parsed) && parsed.length === files.length) {
+    return parsed.map((p) => (p && typeof p === "object" ? p : {}));
+  }
+
+  // If parsed is an object but not keyed by filename, apply same to all
+  if (parsed && typeof parsed === "object") {
+    return files.map(() => parsed);
+  }
+
+  return files.map(empty);
 }
 
-/**
- * Convert stored filename -> public URL/path used in DB.
- * Adjust this to match how you serve the uploads folder (static route).
- * Example: if you serve uploads with `app.use('/uploads', express.static('uploads'))`
- * then publicPath('abc.jpg') -> `/uploads/abc.jpg`
- */
-export const publicPath = (filename: string) => `/uploads/${filename}`;
+export const addProductImages: RequestHandler = async (req, res) => {
+  const files = Array.isArray((req as any).files) ? ((req as any).files as MulterFile[]) : [];
 
+  try {
+    const { id } = req.params;
+    if (!files.length) return res.status(400).json({ message: "No images uploaded" });
+
+    // parse attributes provided in form-data field "attributes"
+    const rawAttributes = req.body?.attributes;
+    const attributesPerFile = buildAttributesPerFile(rawAttributes, files);
+
+    // build image subdocuments
+    const subdocs = files.map((f, i) => {
+      const attrs = attributesPerFile[i] ?? {};
+      // ensure every value is an array of strings
+      const normalized: Record<string, string[]> = {};
+      Object.entries(attrs).forEach(([k, v]) => {
+        if (Array.isArray(v)) normalized[k] = v.map(String);
+        else if (v != null) normalized[k] = [String(v)];
+        else normalized[k] = [];
+      });
+
+      return {
+        url: publicPath(f.filename),
+        attributes: normalized,
+      };
+    });
+
+    // ensure product exists
+    const product = await Product.findById(id);
+    if (!product) {
+      files.forEach((f) => removeFile(f.filename));
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const updated = await Product.findByIdAndUpdate(
+      id,
+      { $push: { images: { $each: subdocs } } },
+      { new: true }
+    ).lean();
+
+    return res.status(200).json({ message: "Images uploaded", product: updated });
+  } catch (err: any) {
+    console.error("addProductImages error:", err);
+
+    // cleanup uploaded files on error
+    if (Array.isArray((req as any).files)) {
+      (req as any).files.forEach((f: MulterFile) => {
+        if (f?.filename) removeFile(f.filename);
+      });
+    }
+
+    return res.status(500).json({ message: "Internal server error", error: err?.message });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ======================================================================
+
+// old codes 
 // export const getProducts = async (req: Request, res: Response) => {
 //   try {
 //     const products = await Product.find();
@@ -130,79 +250,3 @@ export const updateProduct = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Remove a file from disk (helper used on error cleanup)
- */
-const removeFile = (filename: string) => {
-  try {
-    const filePath = path.join(process.cwd(), "uploads", filename);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  } catch (err) {
-    // ignore cleanup errors
-    console.error("Failed to remove file during cleanup:", err);
-  }
-};
-
-/**
- * Controller: addProductImages
- * Route example:
- *   router.post('/products/:id/images', uploadMany.array('images', 10), addProductImages);
- */
-export const addProductImages: RequestHandler = async (req, res) => {
-  // cast only where needed
-  const mreq = req as MulterRequest;
-
-  try {
-    const { id } = req.params;
-    const files = Array.isArray(req.files) ? req.files : [];
-
-    console.log("files : ", files);
-    console.log("id : ", id);
-    
-    
-
-    if (!files || files.length === 0) {
-      return res.status(400).json({ message: "No images uploaded" });
-    }
-
-    // Map multer file objects to public paths and store filenames separately for potential cleanup
-    const filenames = files.map((f) => f.filename);
-    const imagePaths = filenames.map(publicPath);
-
-    // Ensure product exists
-    const product = await Product.findById(id);
-    if (!product) {
-      // cleanup files we just stored
-      filenames.forEach(removeFile);
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    // Update product by pushing new images (use $each so we can push multiple)
-    const updated = await Product.findByIdAndUpdate(
-      id,
-      { $push: { images: { $each: imagePaths } } },
-      { new: true } // return the updated document
-    ).lean();
-
-    return res
-      .status(200)
-      .json({ message: "Images uploaded", product: updated });
-  } catch (err: any) {
-    console.error("addProductImages error:", err);
-
-    // If multer stored files on disk but we hit an error, try to remove them.
-    // req.files may be an array or object; handle common case array.
-    if (Array.isArray((req as any).files)) {
-      (req as any).files.forEach((f: Express.Multer.File) => {
-        if (f && f.filename) removeFile(f.filename);
-      });
-    }
-
-    // Multer errors are typically instanceof multer.MulterError, but here we generalize
-    if (err && err.name === "MulterError") {
-      return res.status(400).json({ message: err.message });
-    }
-
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
