@@ -1,7 +1,7 @@
 import React, { useRef, useMemo } from "react";
 import JoditEditor from "jodit-react";
 
-const JoditEditorAuto = ({ value, onChange, placeholder }) => {
+const JoditEditorAuto = ({ value, onChange, placeholder, name}) => {
   const editor = useRef(null);
 
   const config = useMemo(
@@ -31,6 +31,7 @@ const JoditEditorAuto = ({ value, onChange, placeholder }) => {
 
   return (
     <JoditEditor
+    name={name || 'richtext'} 
       ref={editor}
       value={value}
       config={config}
