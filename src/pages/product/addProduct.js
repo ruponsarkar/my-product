@@ -1,35 +1,16 @@
-import React, { useState } from 'react'
-import Input from '../../components/form/input'
-import JoditEditorComponent from '../../components/form/JoditEditorComponent'
+import React, { useState } from "react";
+import Input from "../../components/form/input";
+import JoditEditorAuto from "../../components/form/JoditEditorAuto";
+import Sidebar from "../../components/dashboard/sidebar";
+import AddProductForm from "./add-forms";
+import Dynamic from "./add-forms/dynamic";
 
 export default function AddProduct() {
-
-    const [editorContent, setEditorContent] = useState("");
-
-    const handleContent = (content) => {
-        setEditorContent(content);
-    };
-
-    const onSave = () => {
-        console.log(editorContent);
-    };
-
-    return (
-        <div>
-            <div>
-                <Input label={'Product name'} />
-            </div>
-
-            <div>
-                <JoditEditorComponent
-                    value={editorContent}
-                    onChange={(newContent) => setEditorContent(newContent)}
-                />
-            </div>
-
-            <div>
-                <button onClick={onSave}>Save</button>
-            </div>
-        </div>
-    )
+  return (
+    <>
+      <Sidebar>
+        <AddProductForm />
+      </Sidebar>
+    </>
+  );
 }

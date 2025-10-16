@@ -36,3 +36,20 @@
     transform: rotate(360deg);
   }
 }
+
+.input-spacing > * {
+  margin-bottom: 1rem; /* adds space between children */
+}
+.input-spacing > *:last-child {
+  margin-bottom: 0; /* remove margin on last item */
+}
+
+.bg-svg {
+  background-image: url("https://img.freepik.com/free-vector/background-gradient-line-abstract-colorful_483537-2822.jpg?t=st=1757956410~exp=1757960010~hmac=c3cb7fc610d8787b103ab9f80fc9d1b1b21cd5a63a4ab2bb569f510f4862e298&w=2000");
+  background-size: cover;      
+  background-position: center; 
+  background-repeat: no-repeat; 
+  
+}
+
+
