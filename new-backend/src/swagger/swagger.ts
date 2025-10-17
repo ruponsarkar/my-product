@@ -22,7 +22,8 @@ const options: swaggerJSDoc.Options = {
   swaggerDefinition,
   apis: [
     "./src/routes/*.ts",       // route files
-    "./src/controllers/*.ts",  // controller files with @openapi comments
+    "./src/controllers/*.ts",  // controller files with @openapi comments,
+    "./src/swagger/docs/*.js",    // scan separate docs folder
   ],
 };
 

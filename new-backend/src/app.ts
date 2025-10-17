@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import routes from './routes';
 import path from "path";
 import swaggerUi from "swagger-ui-express";
-import swaggerSpec from "./utils/swagger";
+import swaggerSpec from "./swagger/swagger";
 
 const app = express();
 
