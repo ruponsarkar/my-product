@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   getProducts,
-  getProductById,
+  getProductByIdOrSlug,
   saveProduct,
   updateProduct,
   addProductImages,
@@ -12,7 +12,7 @@ const router = Router();
 
 router.get("/", getProducts);
 router.post("/", saveProduct);
-router.get("/:id", getProductById);
+router.get("/:id", getProductByIdOrSlug);
 router.put("/:id", updateProduct);
 
 // router.post("/:id/image", uploadMany.array("images", 10), addProductImages);

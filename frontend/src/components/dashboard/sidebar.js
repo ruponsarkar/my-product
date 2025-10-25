@@ -44,10 +44,11 @@ const Sidebar = ({ children }) => {
       text: "Products",
       icon: <CategoryIcon />,
       children: [
-        { text: "View Products", path: "/ViewProducts" },
         { text: "Add Product", path: "/addProduct" },
+        { text: "View Products", path: "/ViewProducts" },
       ],
     },
+    { text: "POS", icon: <BarChartIcon />, path: "/sell" },
     { text: "Reports", icon: <BarChartIcon />, path: "/reports" },
     { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
   ];

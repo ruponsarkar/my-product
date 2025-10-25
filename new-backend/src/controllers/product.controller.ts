@@ -206,15 +206,43 @@ export const getProducts = async (req: Request, res: Response) => {
   }
 };
 
-export const getProductById = async (req: Request, res: Response) => {
+// export const getProductById = async (req: Request, res: Response) => {
+//   try {
+//     const product = await Product.findById(req.params.id);
+//     if (!product) return res.status(404).json({ message: "Not found" });
+//     res.json(product);
+//   } catch (err) {
+//     res.status(500).json({ error: err });
+//   }
+// };
+
+export const getProductByIdOrSlug = async (req: Request, res: Response) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Not found" });
-    res.json(product);
-  } catch (err) {
-    res.status(500).json({ error: err });
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Missing ID or slug" });
+    }
+
+    // Ensure id is treated as string for the regex test
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(id));
+
+    const product = isObjectId
+      ? await Product.findById(id)
+      : await Product.findOne({ slug: id });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.status(200).json(product);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
 
 export const saveProduct = async (req: Request, res: Response) => {
   try {
