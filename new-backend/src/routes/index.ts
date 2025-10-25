@@ -19,6 +19,20 @@ router.use("/orders", orderRoutes);
 router.use('/forms', formRoutes);
 router.use('/form_attritubess', form_attritubesRoutes);
 
+/**
+ * @openapi
+ * /api/v1/:
+ *   get:
+ *     summary: Get all products
+ *     tags:
+ *       - Products
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.get("/", (req, res)=>{return 'working'});
+
+
 
 export default router;
 

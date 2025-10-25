@@ -1,6 +1,5 @@
 import { Schema, model, Document } from "mongoose";
 
-
 export interface IProduct extends Document {
   name: string;
   description?: string;
@@ -58,6 +57,17 @@ export interface IProduct extends Document {
   updatedAt?: Date;
 }
 
+const ImageSchema = new Schema(
+  {
+    url: { type: String, required: false },
+    // store attributes as an object: { color: ['red'], size: ['M','L'] }
+    attributes: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+  },
+  { _id: false } // optional: prevents separate _id for each image subdoc
+);
 
 const ProductSchema = new Schema(
   {
@@ -98,24 +108,30 @@ const ProductSchema = new Schema(
 
     // Media
     // images: [{ type: String }],
-    images: [
-      {
-        url: { type: String, required: false },
-        
-        attributes: [
-          {
-            name: { type: String, required: false },
-            value: [{ type: String, required: false }]
-          }
-        ]
-      }
-    ],
+    // images: [
+    //   {
+    //     url: { type: String, required: false },
+    //     attributes: {
+    //       type: Schema.Types.Mixed,
+    //       default: {},
+    //     },
+
+    //     // attributes: [
+    //     //   {
+    //     //     name: { type: String, required: false },
+    //     //     value: [{ type: String, required: false }]
+    //     //   }
+    //     // ]
+    //   },
+    // ],
+
+    images: { type: [ImageSchema], default: [] },
 
     // Extra
     // attributes: [{ key: String, value: String }],
     attributes: {
       type: Schema.Types.Mixed,
-      default: {}
+      default: {},
     },
     ratingsAverage: { type: Number, default: 0 },
     ratingsCount: { type: Number, default: 0 },

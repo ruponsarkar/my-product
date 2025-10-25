@@ -7,7 +7,7 @@ import Modal from "../../../components/modal/modal";
  *  - handleChange: function that accepts an event-like object { target: { name, value, type? } }
  *  - form: the parent form object (so we can keep attributes in sync)
  */
-export default function AttributesForm({ handleChange, form }) {
+export default function AttributesForm({ handleChange, form, onSave }) {
   const [inputNames, setInputNames] = useState([
     { name: "weight", label: "Weight" },
     { name: "dimensions", label: "Dimensions (L x W x H)" },
@@ -172,6 +172,12 @@ export default function AttributesForm({ handleChange, form }) {
         title="Add Attribute"
         content={addAttributeForm()}
       />
+
+      <div>
+        <button className="btn btn-success" onClick={onSave}>
+          Save and next
+        </button>
+      </div>
     </>
   );
 }
