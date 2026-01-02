@@ -32,10 +32,12 @@ export default function DynamicProductTable({
 }) {
   const defaultColumns = [
     { key: "sku", label: "SKU", width: 140, sortable: true },
+    { key: "barcode", label: "Barcode", width: 140, sortable: true },
     { key: "name", label: "Product Name", width: 360, sortable: true },
     { key: "category", label: "Category", width: 180, sortable: true },
-    { key: "price", label: "Price", width: 120, sortable: true },
-    { key: "stock", label: "Stock", width: 120, sortable: true },
+    { key: "mrp", label: "MRP", width: 120, sortable: true },
+    { key: "sellingPrice", label: "Selling Price", width: 120, sortable: true },
+    { key: "stockQty", label: "Stock", width: 120, sortable: true },
     { key: "createdAt", label: "Created", width: 180, sortable: true, format: (v) => new Date(v).toLocaleDateString() },
   ];
 

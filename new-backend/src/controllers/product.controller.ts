@@ -6,7 +6,6 @@ import slugify from "slugify";
 import path from "path";
 import fs from "fs";
 
-
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 const PUBLIC_PREFIX = "/uploads";
 const publicPath = (filename: string) => `${PUBLIC_PREFIX}/${filename}`;
@@ -29,7 +28,10 @@ type MulterFile = Express.Multer.File;
  *  - array matching files order -> [ { color: [...] }, { ... } ]
  *  - single object -> apply to all files (not recommended)
  */
-function buildAttributesPerFile(raw: any, files: MulterFile[]): (Record<string, string[]>)[] {
+function buildAttributesPerFile(
+  raw: any,
+  files: MulterFile[]
+): Record<string, string[]>[] {
   const empty = () => ({});
   if (!raw) return files.map(empty);
 
@@ -48,7 +50,7 @@ function buildAttributesPerFile(raw: any, files: MulterFile[]): (Record<string, 
     return files.map((f) => {
       // prefer originalname, then filename (Multer generated)
       const key = parsed[f.originalname] ?? parsed[f.filename];
-      return (key && typeof key === "object") ? key : {};
+      return key && typeof key === "object" ? key : {};
     });
   }
 
@@ -66,11 +68,14 @@ function buildAttributesPerFile(raw: any, files: MulterFile[]): (Record<string, 
 }
 
 export const addProductImages: RequestHandler = async (req, res) => {
-  const files = Array.isArray((req as any).files) ? ((req as any).files as MulterFile[]) : [];
+  const files = Array.isArray((req as any).files)
+    ? ((req as any).files as MulterFile[])
+    : [];
 
   try {
     const { id } = req.params;
-    if (!files.length) return res.status(400).json({ message: "No images uploaded" });
+    if (!files.length)
+      return res.status(400).json({ message: "No images uploaded" });
 
     // parse attributes provided in form-data field "attributes"
     const rawAttributes = req.body?.attributes;
@@ -106,7 +111,9 @@ export const addProductImages: RequestHandler = async (req, res) => {
       { new: true }
     ).lean();
 
-    return res.status(200).json({ message: "Images uploaded", product: updated });
+    return res
+      .status(200)
+      .json({ message: "Images uploaded", product: updated });
   } catch (err: any) {
     console.error("addProductImages error:", err);
 
@@ -117,32 +124,15 @@ export const addProductImages: RequestHandler = async (req, res) => {
       });
     }
 
-    return res.status(500).json({ message: "Internal server error", error: err?.message });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: err?.message });
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ======================================================================
 
-// old codes 
+// old codes
 // export const getProducts = async (req: Request, res: Response) => {
 //   try {
 //     const products = await Product.find();
@@ -159,7 +149,7 @@ function escapeRegex(input: string) {
 export const getProducts = async (req: Request, res: Response) => {
   try {
     const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
     const search =
       typeof req.query.search === "string" ? req.query.search.trim() : "";
     const sortBy =
@@ -242,7 +232,28 @@ export const getProductByIdOrSlug = async (req: Request, res: Response) => {
   }
 };
 
+export const getProductBarcodeOrSku = async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
 
+    if (!code) {
+      return res.status(400).json({ message: "Missing Barcode or SKU" });
+    }
+
+    const product = await Product.findOne({
+      $or: [{ barcode: code }, { sku: code }],
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.status(200).json(product);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 export const saveProduct = async (req: Request, res: Response) => {
   try {
@@ -278,3 +289,38 @@ export const updateProduct = async (req: Request, res: Response) => {
   }
 };
 
+export const getLastSkuNumber = async (req: Request, res: Response) => {
+  try {
+    // const prefix = "BOT-MIL-";
+    const { prefix } = req.params;
+
+    const lastProduct = await Product.findOne(
+      { sku: { $regex: `^${prefix}` } }, // starts with BOT-MIL-
+      { sku: 1 }
+    )
+      .sort({ sku: -1 }) // lexicographically works because of padding
+      .lean();
+
+    let lastNumber = 0;
+
+    if (lastProduct?.sku) {
+      lastNumber = Number(lastProduct.sku.split("-").pop());
+    }
+
+    res.json({ lastNumber });
+  } catch (err) {
+    res.status(500).json({ error: err });
+  }
+};
+
+
+
+// export const deleteProduct = async (req: Request, res: Response) => {
+//   try {
+//     const product = await Product.findByIdAndDelete(req.params.id);
+//     if (!product) return res.status(404).json({ message: "Not found" });
+//     res.json(product);
+//   } catch (err) {
+//     res.status(500).json({ error: err });
+//   }
+// };

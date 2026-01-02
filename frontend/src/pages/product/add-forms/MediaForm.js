@@ -4,9 +4,17 @@ import Modal from "../../../components/modal/modal";
 import ImgAttributes from "./utils/imgAttributes";
 import { uploadProductImage } from "../../../api/services/product/productApi";
 
-export default function MediaForm({ handleChange, form, productId }) {
-  const [images, setImages] = useState([]);
-  const [imageAttrs, setImageAttrs] = useState({}); // <-- map: filename -> { attrName: [values] }
+export default function MediaForm({
+  handleChange,
+  form,
+  productId,
+  images,
+  setImages,
+  imageAttrs,
+  setImageAttrs,
+}) {
+  // const [images, setImages] = useState([]);
+  // const [imageAttrs, setImageAttrs] = useState({}); // <-- map: filename -> { attrName: [values] }
   const fileInputRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -67,7 +75,10 @@ export default function MediaForm({ handleChange, form, productId }) {
   // Called by ImgAttributes when attributes change for a particular image
   const handleAttributesUpdate = (key, attrsObject) => {
     // key = filename or id
-    setImageAttrs((prev) => ({ ...prev, [key]: { ...(prev[key] || {}), ...attrsObject } }));
+    setImageAttrs((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] || {}), ...attrsObject },
+    }));
   };
 
   // Example: expose images + attributes together to parent on Save (if you want)
@@ -89,8 +100,7 @@ export default function MediaForm({ handleChange, form, productId }) {
 
     const res = await uploadProductImage(productId, formData);
     console.log("upload image response: ", res);
-
-  }
+  };
 
   return (
     <>
@@ -98,9 +108,10 @@ export default function MediaForm({ handleChange, form, productId }) {
         <h4>Media</h4>
 
         {/* Upload Images */}
-        <div className="mt-3 col-md-12">
-          <label>Images</label>
+        <div className="d-flex gap-3 my-3 col-md-12">
+          {/* <label>Upload </label> */}
           <input
+          className="form-control"
             ref={fileInputRef}
             multiple
             type="file"
@@ -109,7 +120,29 @@ export default function MediaForm({ handleChange, form, productId }) {
           />
         </div>
 
+        <div>
+          Or
+        </div>
+
+        <div>
+
+        <button className="btn btn-primary mt-3" onClick={() => fileInputRef.current.click()}>
+          Upload / Take Photo
+        </button>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          multiple
+          style={{ display: "none" }}
+          onChange={handleImageUpload}
+        />
+
         {/* Preview */}
+       length here = {images.length}
         {images.length > 0 && (
           <div className="d-flex flex-wrap gap-3 mt-3">
             {images.map((img, i) => {
@@ -120,12 +153,20 @@ export default function MediaForm({ handleChange, form, productId }) {
                 <div
                   key={img.id}
                   className="position-relative border rounded p-2"
-                  style={{ width: "220px", textAlign: "center", backgroundColor: "white" }}
+                  style={{
+                    width: "220px",
+                    textAlign: "center",
+                    backgroundColor: "white",
+                  }}
                 >
                   <img
                     src={img.url}
                     alt={`preview-${i}`}
-                    style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      objectFit: "cover",
+                    }}
                   />
                   <button
                     type="button"
@@ -142,12 +183,12 @@ export default function MediaForm({ handleChange, form, productId }) {
                   >
                     X
                   </button>
-
                   <div style={{ textAlign: "left", marginTop: 8 }}>
                     {attrsForThis && Object.keys(attrsForThis).length > 0 ? (
                       Object.entries(attrsForThis).map(([k, v]) => (
                         <div key={`${key}-${k}`}>
-                          <strong>{k}:</strong> {Array.isArray(v) ? v.join(", ") : v}
+                          <strong>{k}:</strong>{" "}
+                          {Array.isArray(v) ? v.join(", ") : v}
                         </div>
                       ))
                     ) : (
@@ -161,13 +202,13 @@ export default function MediaForm({ handleChange, form, productId }) {
         )}
 
         {/* Video Upload */}
-        <div className="mt-3 col-md-6">
+        {/* <div className="mt-3 col-md-6">
           <label>Upload Video</label>
           <input type="file" accept="video/*" />
-        </div>
+        </div> */}
 
         {/* Video Link */}
-        <div className="mt-3">
+        {/* <div className="mt-3">
           <label>Video Link</label>
           <input
             type="text"
@@ -176,7 +217,7 @@ export default function MediaForm({ handleChange, form, productId }) {
             value={form.videoLink || ""}
             onChange={handleChange}
           />
-        </div>
+        </div> */}
       </div>
 
       <Modal
@@ -187,8 +228,8 @@ export default function MediaForm({ handleChange, form, productId }) {
             form={form}
             imgForm={imgForm}
             setImgForm={setImgForm}
-            handleAttributeChange={() => { }}
-            handleChange={() => { }}
+            handleAttributeChange={() => {}}
+            handleChange={() => {}}
             images={images}
             selectedImage={selectedImage}
             setImages={setImages}
@@ -200,17 +241,17 @@ export default function MediaForm({ handleChange, form, productId }) {
       />
 
       <div style={{ marginTop: 12 }}>
-        <button onClick={saveAllToParent} className="btn btn-success">
+        {/* <button onClick={saveAllToParent} className="btn btn-success">
           Save (images → form.images)
         </button>
-        &nbsp;
-        <button
+        &nbsp; */}
+        {/* <button
           type="button"
           className="btn btn-outline-secondary"
           onClick={() => console.log("attrs map:", imageAttrs)}
         >
           Log attrs
-        </button>
+        </button> */}
       </div>
     </>
   );

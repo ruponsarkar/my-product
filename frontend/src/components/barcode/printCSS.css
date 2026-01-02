@@ -1,0 +1,33 @@
+/* ================================
+   PRINT ONLY – BARCODE LABELS
+   ================================ */
+   @media print {
+    body * {
+      visibility: hidden;
+    }
+  
+    .barcode-print-area,
+    .barcode-print-area * {
+      visibility: visible;
+    }
+  
+    .barcode-print-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  
+    .barcode-label {
+      page-break-after: always;
+      text-align: center;
+    }
+  }
+
+  @media print {
+    .barcode-label {
+      width: 2in;
+      height: 1in;
+    }
+  }
+  
+  

@@ -75,6 +75,7 @@ const ProductSchema = new Schema(
     description: { type: String, text: false },
     slug: { type: String, required: true, unique: true },
     sku: { type: String, unique: true }, // stock keeping unit
+    barcode: { type: String },
     category: { type: String },
     brand: { type: String },
 

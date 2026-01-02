@@ -27,7 +27,7 @@ const drawerWidth = 240;
 const collapsedWidth = 70;
 
 const Sidebar = ({ children }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState(null);
 
   const handleToggleSidebar = () => {
@@ -48,6 +48,7 @@ const Sidebar = ({ children }) => {
         { text: "View Products", path: "/ViewProducts" },
       ],
     },
+    { text: "Category", icon: <BarChartIcon />, path: "/category" },
     { text: "POS", icon: <BarChartIcon />, path: "/sell" },
     { text: "Reports", icon: <BarChartIcon />, path: "/reports" },
     { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
@@ -116,9 +117,17 @@ const Sidebar = ({ children }) => {
       {/* Main Content Area */}
       <Box
         component="main"
+        // sx={{
+        //   flexGrow: 1,
+        //   transition: "margin 0.3s",
+        // }}
+        style={{ padding: 0 }} 
         sx={{
           flexGrow: 1,
           transition: "margin 0.3s",
+          '&&': {
+            padding: 0,
+          },
         }}
       >
         {/* Topbar */}
@@ -149,7 +158,7 @@ const Sidebar = ({ children }) => {
           style={{
             minHeight: "80vh",
             backgroundColor: "#f5f5f5",
-            padding: "10px",
+            // padding: "10px",
           }}
           className="rounded shadow bg-svg"
         >

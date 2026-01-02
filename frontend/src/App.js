@@ -14,18 +14,20 @@ import Test from "./pages/test/test";
 import ProductDetails from "./pages/product/details";
 import Sell from "./pages/POS/sell";
 import Order from "./pages/POS/order";
-
+import Login from "./pages/login/login";
 function App() {
   return (
     <div className="">
       <BrowserRouter>
         <Box sx={{ display: "flex" }}>
           {/* <Sidebar /> */}
-          <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+          <Box component="main" sx={{ flexGrow: 1,  }}>
             {/* <Toolbar /> */}
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/addProduct" element={<AddProduct />} />
+              <Route path="/updateProduct/:id" element={<AddProduct />} />
               <Route path="/ViewProducts" element={<Sidebar>  <AllProducts /> </Sidebar>} />
               <Route path="/product/:slug" element={<Sidebar>  <ProductDetails /> </Sidebar>} />
               <Route path="/sell/:slug" element={<Sidebar>  <Sell /> </Sidebar>} />

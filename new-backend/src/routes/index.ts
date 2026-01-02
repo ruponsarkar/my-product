@@ -1,3 +1,4 @@
+import categoryRoutes from './category.routes';
 import form_attritubesRoutes from './form_attritubes.routes';
 
 import formRoutes from './form.routes';
@@ -18,6 +19,7 @@ router.use("/orders", orderRoutes);
 
 router.use('/forms', formRoutes);
 router.use('/form_attritubess', form_attritubesRoutes);
+router.use('/categorys', categoryRoutes);
 
 /**
  * @openapi
@@ -35,6 +37,8 @@ router.get("/", (req, res)=>{return 'working'});
 
 
 export default router;
+
+
 
 
 
