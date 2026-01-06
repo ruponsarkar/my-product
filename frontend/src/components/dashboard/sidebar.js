@@ -48,7 +48,7 @@ const Sidebar = ({ children }) => {
         { text: "View Products", path: "/ViewProducts" },
       ],
     },
-    { text: "Category", icon: <BarChartIcon />, path: "/category" },
+    { text: "Analytics", icon: <BarChartIcon />, path: "/Analytics" },
     { text: "POS", icon: <BarChartIcon />, path: "/sell" },
     { text: "Reports", icon: <BarChartIcon />, path: "/reports" },
     { text: "Settings", icon: <SettingsIcon />, path: "/settings" },

@@ -6,7 +6,8 @@ import {
   updateProduct,
   addProductImages,
   getProductBarcodeOrSku,
-  getLastSkuNumber
+  getLastSkuNumber,
+  deleteProductImages
 } from "../controllers/product.controller";
 import { uploadMany } from "../middlewares/upload.middleware";
 
@@ -22,6 +23,7 @@ router.get("/getLastSkuNumber/:prefix", getLastSkuNumber);
 // router.post("/:id/image", uploadMany.array("images", 10), addProductImages);
 
 
+router.post("/deleteProductImages/:id", deleteProductImages);
 router.post("/:id/images", uploadMany.array("images", 10), addProductImages);
 // router.put("/:id/image", upload.single("image"), updateProductImage);
 

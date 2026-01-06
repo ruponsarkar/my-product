@@ -7,6 +7,7 @@ export const saveProducts = (data) => api.post(`products`, data);
 export const updateProduct = (id, payload) => api.put(`products/${id}`, payload); 
 
 export const uploadProductImage = (id, formData) => api.post(`products/${id}/images`, formData);
+export const deleteProductImages = (id, payload) => api.post(`products/deleteProductImages/${id}`, payload);
 
 
 export const getLastSkuNumber = (prefix) => api.get(`products/getLastSkuNumber/${prefix}`);

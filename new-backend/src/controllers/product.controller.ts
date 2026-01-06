@@ -313,7 +313,43 @@ export const getLastSkuNumber = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteProductImages = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { images } = req.body; // <-- array of image URLs to delete
+    console.log("images ==>> ", images);
 
+    if (!Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ message: "No images provided" });
+    }
+
+    const product: any = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    console.log("id => ", id);
+    console.log("product => ", product);
+
+    // extract URLs to remove
+    const urlsToRemove = images.map((img) => img.url);
+
+    // ✅ FILTER OUT images whose url exists in req.body.images
+    product.images = product.images.filter(
+      (img: any) => !urlsToRemove.includes(img.url)
+    );
+
+    await product.save();
+
+    res.json({
+      message: "Images deleted successfully",
+      images: product.images,
+    });
+  } catch (err) {
+    console.error("Delete product images error:", err);
+    res.status(500).json({ error: err });
+  }
+};
 
 // export const deleteProduct = async (req: Request, res: Response) => {
 //   try {

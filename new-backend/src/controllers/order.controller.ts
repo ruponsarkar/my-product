@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Order from "../models/order.model";
+import Product from "../models/product.model";
 
 // helper to generate ORDER ID like ORD0001
 const generateOrderId = async () => {
@@ -53,6 +54,9 @@ export const createOrder = async (
 
     await order.save();
 
+    // decrement stock
+    await removeStock(items);
+
     res.status(201).json({
       message: "Order placed successfully",
       order,
@@ -77,4 +81,21 @@ export const getMyOrders = async (
     console.error(err);
     res.status(500).json({ error: "Failed to fetch orders" });
   }
+};
+
+const removeStock = async (items: any[]) => {
+  if (!items.length) return;
+
+  const bulkOps = items.map((item) => ({
+    updateOne: {
+      filter: { _id: item.product },
+      update: { $inc: { stockQty: -item.quantity } }, // 🔥 atomic decrement
+    },
+  }));
+
+  const bulkOps2 = items.map((item) => console.log("item", item));
+
+  console.log("bulkOps", bulkOps);
+
+  await Product.bulkWrite(bulkOps);
 };

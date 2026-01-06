@@ -15,6 +15,7 @@ import ProductDetails from "./pages/product/details";
 import Sell from "./pages/POS/sell";
 import Order from "./pages/POS/order";
 import Login from "./pages/login/login";
+import Analytics from "./pages/analytics";
 function App() {
   return (
     <div className="">
@@ -24,7 +25,7 @@ function App() {
           <Box component="main" sx={{ flexGrow: 1,  }}>
             {/* <Toolbar /> */}
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Sidebar> <Dashboard /> </Sidebar>} />
               <Route path="/login" element={<Login />} />
               <Route path="/addProduct" element={<AddProduct />} />
               <Route path="/updateProduct/:id" element={<AddProduct />} />
@@ -32,6 +33,7 @@ function App() {
               <Route path="/product/:slug" element={<Sidebar>  <ProductDetails /> </Sidebar>} />
               <Route path="/sell/:slug" element={<Sidebar>  <Sell /> </Sidebar>} />
               <Route path="/order/:slug" element={<Sidebar>  <Order /> </Sidebar>} />
+              <Route path="/Analytics" element={<Sidebar>  <Analytics /> </Sidebar>} />
 
 
               <Route path="/feelings" element={<AddFeelings />} />
