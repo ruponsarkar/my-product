@@ -1,50 +1,128 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import BasicInfoForm from "./BasicInfoForm";
 import StockInfoForm from "./StockInfoForm";
 import PricingInfoForm from "./PricingInfoForm";
 import SupplierInfoForm from "./SupplierInfoForm";
 import AttributesForm from "./AttributesForm";
 import MediaForm from "./MediaForm";
-import StatusForm from "./StatusForm";
 import { useSelector, useDispatch } from "react-redux";
 import { setProductForm } from "../../../features/inventory/productSlice";
-import { saveProducts } from "../../../api/services/product/productApi";
+import {
+  saveProducts,
+  updateProduct,
+  getProductByIdOrSlug,
+  uploadProductImage,
+  deleteProductImages,
+} from "../../../api/services/product/productApi";
+import { useParams, useLocation, useSearchParams } from "react-router-dom";
 
 export default function AddProduct() {
+  const { id } = useParams();
+  const location = useLocation();
   const dispatch = useDispatch();
-  const [step, setStep] = useState(1);
-  const [editorContent, setEditorContent] = useState("");
+
+  const [searchParams] = useSearchParams();
+  const code = searchParams.get("code");
+
   const form = useSelector((state) => state.inventory.productForm);
-  const [productId, setProductId] = useState(null);
+
+  const [step, setStep] = useState(1);
+
+  console.log("id===>> ", code);
+
+  useEffect(() => {
+    if (code) {
+      dispatch(setProductForm({ ...form, sku:code, barcode:code }));
+    }
+  }, [code]);
+
+  // ================== IMAGE STATES (NEW) ==================
+  const [existingImages, setExistingImages] = useState([]); // images from DB
+  const [newImages, setNewImages] = useState([]); // newly uploaded files
+  const [removedImages, setRemovedImages] = useState([]); // images marked for delete
+  const [imageAttrs, setImageAttrs] = useState({}); // attributes map
+  // ========================================================
 
   const totalSteps = 6;
 
-  const nextStep = () => {
-    if (step < totalSteps) setStep(step + 1);
-  };
+  // ================== LOAD PRODUCT (UPDATE MODE) ==================
+  useEffect(() => {
+    if (location.pathname.includes("updateProduct") && id) {
+      loadProduct();
+    }
+  }, [id]);
 
-  const prevStep = () => {
-    if (step > 1) setStep(step - 1);
-  };
+  const loadProduct = async () => {
+    const res = await getProductByIdOrSlug(id);
 
+    dispatch(setProductForm(res.data));
+
+    setExistingImages(res.data.images || []); // ✅ existing images only
+    setNewImages([]); // ✅ reset new uploads
+    setRemovedImages([]); // ✅ reset deleted list
+  };
+  // ================================================================
+
+  // ================== SAVE (ADD PRODUCT) ==================
   const onSave = async () => {
-    console.log("Saving product...");
-    console.log("form:", form);
-    // Later: gather all form data into one object
-    // return;
 
     try {
-      const data = await saveProducts(form);
-      console.log("data", data.data);
-      setProductId(data.data._id);
-    } catch (err) {
-      console.log("error saving", err);
-    }  
+      
+      const res = await saveProducts(form);
+      const productId = res.data._id;
+      
+      await uploadImages(productId);
+      alert("Product added successfully");
+    }
+    catch (err) {
+      console.log("err onSave", err);
+    }
+  };
+  // ========================================================
+
+  // ================== UPDATE PRODUCT ==================
+  const handleUpdate = async () => {
+    await updateProduct(form._id, form);
+
+    await uploadImages(form._id);
+    await deleteImages(form._id);
+
+    alert("Product updated successfully");
+  };
+  // =====================================================
+
+  // ================== IMAGE HELPERS ==================
+  const uploadImages = async (productId) => {
+    if (newImages.length === 0) return;
+
+    const formData = new FormData();
+    newImages.forEach((img) => formData.append("images", img.file));
+    formData.append("attributes", JSON.stringify(imageAttrs));
+    // console.log("formData", formData);
+    try{
+      const res = await uploadProductImage(productId, formData);
+      console.log("res", res);
+    }
+    catch(err){
+      console.log("err uploadProductImage", err);
+    }
   };
 
+  const deleteImages = async (productId) => {
+    if (removedImages.length === 0) return;
+    console.log("removedImages", removedImages);
+    await deleteProductImages(productId, { images: removedImages });
+  };
+  // ===================================================
 
+  // ================== HANDLE FORM CHANGE ==================
   const handleChange = (e) => {
-    const { name, type, checked, value } = e.target;
+    if (!e?.target) {
+      dispatch(setProductForm({ ...form, ...e }));
+      return;
+    }
+
+    const { name, value, type, checked } = e.target;
 
     dispatch(
       setProductForm({
@@ -53,90 +131,47 @@ export default function AddProduct() {
       })
     );
   };
+  // =======================================================
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-3">Add New Product</h2>
+    <div className="container">
+      <h2>Add / Update Product</h2>
 
-      {/* Stepper Header */}
-      <div className="d-flex justify-content-between mb-4">
-        {[
-          "Basic",
-          "Stock",
-          "Pricing",
-          "Supplier",
-          "Attributes",
-          "Media",
-          // "Status",
-        ].map((label, index) => (
-          <div
-            key={index}
-            className={`text-center flex-fill ${
-              step === index + 1 ? "fw-bold text-primary" : "text-muted"
-            }`}
-          >
-            <div
-              className={`rounded-circle border ${
-                step === index + 1 ? "bg-primary text-white" : "bg-light"
-              }`}
-              style={{
-                width: "40px",
-                height: "40px",
-                lineHeight: "40px",
-                margin: "0 auto",
-              }}
-            >
-              {index + 1}
-            </div>
-            <small>{label}</small>
-          </div>
-        ))}
-      </div>
-
-      {/* Step Content */}
-      {step === 1 && (
-        <BasicInfoForm
-          handleChange={handleChange}
-          form={form}
-          editorContent={editorContent}
-          setEditorContent={setEditorContent}
-        />
-      )}
-      {step === 2 && <StockInfoForm handleChange={handleChange} form={form} />}
-      {step === 3 && (
+      {step === 1 && <BasicInfoForm handleChange={handleChange} form={form} />}
+      {step === 2 && (
         <PricingInfoForm handleChange={handleChange} form={form} />
       )}
+      {step === 3 && <StockInfoForm handleChange={handleChange} form={form} />}
       {step === 4 && (
         <SupplierInfoForm handleChange={handleChange} form={form} />
       )}
-      {step === 5 && <AttributesForm handleChange={handleChange} form={form} onSave={onSave} />}
-      {step === 6 && <MediaForm handleChange={handleChange} form={form} productId={productId}/>}
-      {/* {step === 7 && <StatusForm handleChange={handleChange} form={form} onSave={onSave}/>} */}
+      {step === 5 && <AttributesForm handleChange={handleChange} form={form} />}
 
-      {/* Navigation Buttons */}
+      {step === 6 && (
+        <MediaForm
+          existingImages={existingImages}
+          setExistingImages={setExistingImages}
+          newImages={newImages}
+          setNewImages={setNewImages}
+          removedImages={removedImages}
+          setRemovedImages={setRemovedImages}
+          imageAttrs={imageAttrs}
+          setImageAttrs={setImageAttrs}
+        />
+      )}
+
       <div className="d-flex justify-content-between mt-3">
-        {step > 1 ? (
-          <button className="btn btn-secondary" onClick={prevStep}>
-            Previous
-          </button>
-        ) : (
-          <div></div>
+        {step > 1 && (
+          <button onClick={() => setStep(step - 1)}>Previous</button>
         )}
 
-        
         {step < totalSteps ? (
-          <button className="btn btn-primary" onClick={nextStep}>
-            Next
-          </button>
+          <button onClick={() => setStep(step + 1)}>Next</button>
+        ) : id ? (
+          <button onClick={handleUpdate}>Update Product</button>
         ) : (
-          <button className="btn btn-success" onClick={onSave}>
-            Save Product
-          </button>
+          <button onClick={onSave}>Save Product</button>
         )}
-
-        {/* <button className="btn btn-success" onClick={onSave}>
-          Save Product
-        </button> */}
       </div>
     </div>
   );

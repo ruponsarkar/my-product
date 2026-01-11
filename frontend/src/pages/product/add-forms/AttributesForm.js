@@ -173,11 +173,11 @@ export default function AttributesForm({ handleChange, form, onSave }) {
         content={addAttributeForm()}
       />
 
-      <div>
+      {/* <div>
         <button className="btn btn-success" onClick={onSave}>
           Save and next
         </button>
-      </div>
+      </div> */}
     </>
   );
 }
