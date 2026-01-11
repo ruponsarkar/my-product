@@ -25,7 +25,7 @@ const orderSchema = new Schema(
     // Payment method
     payment_type: {
       type: String,
-      enum: ["cash", "online"],
+      enum: ["cash", "online", "credit"],
       required: true,
     },
 
@@ -43,7 +43,7 @@ const orderSchema = new Schema(
           default: 1,
         },
         price: {
-          type: Number, // selling price at order time
+          type: Number,
           required: true,
         },
       },
@@ -67,16 +67,44 @@ const orderSchema = new Schema(
       required: true,
     },
 
+    // 💰 Payment tracking
+    paidAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    credit: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     // Order lifecycle
     status: {
       type: String,
-      enum: ["ordered", "paid", "cancelled", "completed"],
+      enum: ["ordered", "paid", "cancelled", "completed", "credit", "cash"],
       default: "ordered",
     },
   },
   {
-    timestamps: true, // creates createdAt & updatedAt
+    timestamps: true,
   }
 );
+
+// 🔒 Ensure credit logic is consistent
+// orderSchema.pre("save", function (next) {
+//   // credit = total - paidAmount
+//   this.credit = Math.max(this.total - this.paidAmount, 0);
+
+//   // auto status update
+//   if (this.credit > 0) {
+//     this.status = "credit";
+//   } else if (this.paidAmount >= this.total) {
+//     this.status = "paid";
+//   }
+
+//   next();
+// });
 
 export default model("Order", orderSchema);

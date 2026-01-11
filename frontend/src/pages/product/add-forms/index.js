@@ -14,16 +14,27 @@ import {
   uploadProductImage,
   deleteProductImages,
 } from "../../../api/services/product/productApi";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useSearchParams } from "react-router-dom";
 
 export default function AddProduct() {
   const { id } = useParams();
   const location = useLocation();
   const dispatch = useDispatch();
 
+  const [searchParams] = useSearchParams();
+  const code = searchParams.get("code");
+
   const form = useSelector((state) => state.inventory.productForm);
 
   const [step, setStep] = useState(1);
+
+  console.log("id===>> ", code);
+
+  useEffect(() => {
+    if (code) {
+      dispatch(setProductForm({ ...form, sku:code, barcode:code }));
+    }
+  }, [code]);
 
   // ================== IMAGE STATES (NEW) ==================
   const [existingImages, setExistingImages] = useState([]); // images from DB

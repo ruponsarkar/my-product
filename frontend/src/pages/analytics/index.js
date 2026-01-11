@@ -121,7 +121,7 @@ export default function Analytics() {
                             </div>
 
                             <StockBarChart 
-                            data={salesByDateData.map((item) => ({ name: item._id, Total: item.total }))} 
+                            data={salesByDateData.map((item) => ({ name: item._id, Total: item.totalCollected }))} 
                             bars={[{ key: "Total", color: "#1976d2" }]}
                             />
 

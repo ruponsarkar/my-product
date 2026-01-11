@@ -19,6 +19,8 @@ export const createOrder = async (
       discount,
       tax,
       total,
+      paidAmount,
+      credit,
       payment_type,
       customer_phone,
     } = req.body;
@@ -49,7 +51,9 @@ export const createOrder = async (
       discount: discount || 0,
       tax: tax || 0,
       total,
-      status: payment_type === "cash" ? "ordered" : "paid",
+      paidAmount: paidAmount || 0,
+      credit: credit || 0,
+      status: payment_type,
     });
 
     await order.save();

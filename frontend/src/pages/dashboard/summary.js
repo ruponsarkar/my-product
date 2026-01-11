@@ -569,9 +569,16 @@ export default function Summary() {
                 <div className="border-bottom">
                   <div className="small">
                     {" "}
-                    <b> Total Revenue </b> :{" "}
+                    <b> Total Collected </b> :{" "}
                   </div>
-                  <div>{summaryData.totalRevenue}</div>
+                  <div>{summaryData.totalCollected}</div>
+                </div>
+                <div className="border-bottom">
+                  <div className="small">
+                    {" "}
+                    <b> Total Credit </b> :{" "}
+                  </div>
+                  <div>-{summaryData.totalCredit}</div>
                 </div>
 
                 <div className="border-bottom">

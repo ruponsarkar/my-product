@@ -167,6 +167,7 @@ export const getProducts = async (req: Request, res: Response) => {
       const orFilters: any[] = [
         { name: regex },
         { sku: regex },
+        { barcode: regex },
         { category: regex },
       ];
 

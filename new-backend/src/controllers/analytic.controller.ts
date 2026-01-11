@@ -10,7 +10,9 @@ export const totalSalesSummary = async (req: Request, res: Response) => {
         $group: {
           _id: null,
           totalOrders: { $sum: 1 },
-          totalRevenue: { $sum: "$total" },
+          totalSales: { $sum: "$total" },
+          totalCollected: { $sum: "$paidAmount" },
+          totalCredit: { $sum: "$credit" },
           totalDiscount: { $sum: "$discount" },
           totalTax: { $sum: "$tax" },
         },
@@ -20,15 +22,18 @@ export const totalSalesSummary = async (req: Request, res: Response) => {
     res.json(
       result[0] || {
         totalOrders: 0,
-        totalRevenue: 0,
+        totalSales: 0,
+        totalCollected: 0,
+        totalCredit: 0,
         totalDiscount: 0,
         totalTax: 0,
       }
     );
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to fetch summary" });
   }
 };
+
 
 export const salesByDate = async (req: Request, res: Response) => {
   try {
@@ -69,7 +74,9 @@ export const salesByDate = async (req: Request, res: Response) => {
               date: "$createdAt",
             },
           },
-          total: { $sum: "$total" },
+          totalSales: { $sum: "$total" },
+          totalCollected: { $sum: "$paidAmount" },
+          totalCredit: { $sum: "$credit" },
           orders: { $sum: 1 },
         },
       },
@@ -167,6 +174,17 @@ export const netProfit = async (req: Request, res: Response) => {
               $multiply: ["$items.quantity", "$product.costPrice"],
             },
           },
+          collected: {
+            $sum: {
+              $multiply: ["$paidAmount"],
+            },
+          },
+          credit: {
+            $sum: {
+              $multiply: ["$credit"],
+            },
+          },
+
         },
       },
       {
@@ -174,6 +192,8 @@ export const netProfit = async (req: Request, res: Response) => {
           profit: { $subtract: ["$revenue", "$cost"] },
           revenue: 1,
           cost: 1,
+          collected: 1,
+          credit: 1
         },
       },
     ]);
