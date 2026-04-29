@@ -13,6 +13,7 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  Button,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -24,8 +25,11 @@ import {
   Category as CategoryIcon,
   PointOfSale as PointOfSaleIcon,
   Assessment as AssessmentIcon,
+  Logout as LogoutIcon,
 } from "@mui/icons-material";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { logoutAPI } from "../../api/services/auth/logout";
+import { clearAuthData, getStoredUser } from "../../utils/auth";
 
 const drawerWidth = 240;
 const collapsedWidth = 76;
@@ -36,6 +40,8 @@ const Sidebar = ({ children }) => {
   const [open, setOpen] = useState(!isMobile);
   const [expandedMenu, setExpandedMenu] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const currentUser = getStoredUser();
 
   const handleToggleSidebar = () => {
     setOpen(!open);
@@ -43,6 +49,17 @@ const Sidebar = ({ children }) => {
 
   const handleExpand = (menu) => {
     setExpandedMenu(expandedMenu === menu ? null : menu);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutAPI();
+    } catch (_error) {
+      // Client-side cleanup is still enough to end the session locally.
+    } finally {
+      clearAuthData();
+      navigate("/login", { replace: true });
+    }
   };
 
   React.useEffect(() => {
@@ -197,11 +214,24 @@ const Sidebar = ({ children }) => {
                 Inventory Dashboard
               </Typography>
             </Box>
-            <div>
-              <IconButton color="inherit" aria-label="Settings">
-                <SettingsIcon />
-              </IconButton>
-            </div>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              {currentUser?.email && (
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#475569", display: { xs: "none", sm: "block" } }}
+                >
+                  {currentUser.email}
+                </Typography>
+              )}
+              <Button
+                onClick={handleLogout}
+                color="inherit"
+                startIcon={<LogoutIcon />}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Logout
+              </Button>
+            </Box>
           </Toolbar>
         </AppBar>
 

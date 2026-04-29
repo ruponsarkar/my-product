@@ -16,6 +16,7 @@
 
 
 import axios from "axios";
+import { AUTH_TOKEN_KEY, clearAuthData } from "../utils/auth";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "https://api.example.com",
@@ -32,7 +33,7 @@ api.interceptors.request.use(
     }
 
     // Example: attach token if available
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
@@ -47,6 +48,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error("API Error:", error.response || error.message);
+
+    if (error.response?.status === 401) {
+      clearAuthData();
+
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
+
     return Promise.reject(error);
   }
 );

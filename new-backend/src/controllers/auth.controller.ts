@@ -3,22 +3,21 @@ import User from "../models/user.model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+const JWT_SECRET = process.env.JWT_SECRET || "access_secret";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret";
+
 /* ============================
    TOKEN HELPERS
 ============================ */
 
 const generateAccessToken = (userId: string) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET || "access_secret", {
+  return jwt.sign({ id: userId }, JWT_SECRET, {
     expiresIn: "1d",
   });
 };
 
 const generateRefreshToken = (userId: string) => {
-  return jwt.sign(
-    { id: userId },
-    process.env.JWT_REFRESH_SECRET || "refresh_secret",
-    { expiresIn: "7d" }
-  );
+  return jwt.sign({ id: userId }, JWT_REFRESH_SECRET, { expiresIn: "7d" });
 };
 
 /* ============================
@@ -70,7 +69,11 @@ export const login = async (req: Request, res: Response) => {
     res.json({
       token: accessToken,
       refreshToken,
-      user,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
   } catch (err) {
     res.status(500).json({ message: "Login failed" });
@@ -91,7 +94,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     const decoded: any = jwt.verify(
       refreshToken,
-      process.env.JWT_REFRESH_SECRET || "refresh_secret"
+      JWT_REFRESH_SECRET
     );
 
     const newAccessToken = generateAccessToken(decoded.id);
@@ -102,4 +105,8 @@ export const refreshToken = async (req: Request, res: Response) => {
   } catch (err) {
     return res.status(401).json({ message: "Invalid refresh token" });
   }
+};
+
+export const logout = async (_req: Request, res: Response) => {
+  return res.json({ message: "Logged out successfully" });
 };

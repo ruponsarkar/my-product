@@ -1,36 +1,44 @@
 import React, { useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { loginAPI } from "../../api/services/auth/login";
+import { getAuthToken, persistAuthData } from "../../utils/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const token = getAuthToken();
+  const redirectPath = location.state?.from?.pathname || "/";
 
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
     try {
-    //   const res = await axios.post("http://localhost:4000/api/auth/login", {
-    //     email,
-    //     password,
-    //   });
+      const res = await loginAPI({ email, password });
 
-      const res = await loginAPI({email, password});
-      console.log("response", res);
+      persistAuthData({
+        token: res.data.token,
+        refreshToken: res.data.refreshToken,
+        user: res.data.user,
+      });
 
-      // backend returns { token, user }
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      console.log("Logged in user:", res.data.user);
-
-      window.location.href = "/";
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (token) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
@@ -71,8 +79,12 @@ export default function Login() {
         {error && <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
 
         <div>
-          <button type="submit" className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
-            Login
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? "Signing in..." : "Login"}
           </button>
         </div>
       </form>
