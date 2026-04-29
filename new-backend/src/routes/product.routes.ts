@@ -11,9 +11,11 @@ import {
 } from "../controllers/product.controller";
 import { uploadMany } from "../middlewares/upload.middleware";
 
+import { authMiddleware } from "../middlewares/auth.middleware";
+
 const router = Router();
 
-router.get("/", getProducts);
+router.get("/", authMiddleware, getProducts);
 router.post("/", saveProduct);
 router.get("/:id", getProductByIdOrSlug);
 router.get("/code/:code", getProductBarcodeOrSku);
