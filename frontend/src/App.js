@@ -1,8 +1,7 @@
-import logo from "./logo.svg";
 import "./App.css";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/dashboard";
-import { Box, Toolbar } from "@mui/material";
+import { Box } from "@mui/material";
 // import Sidebar from "./components/dashboard/sidebar";
 import AllProducts from "./pages/product/allProducts";
 import AddFeelings from "./pages/feelings/feelings";
@@ -17,6 +16,7 @@ import Order from "./pages/POS/order";
 import Login from "./pages/login/login";
 import Analytics from "./pages/analytics";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Reports from "./pages/reports";
 
 const withProtection = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
 
@@ -38,6 +38,7 @@ function App() {
               <Route path="/sell/:slug" element={withProtection(<Sidebar>  <Sell /> </Sidebar>)} />
               <Route path="/order/:slug" element={withProtection(<Sidebar>  <Order /> </Sidebar>)} />
               <Route path="/Analytics" element={withProtection(<Sidebar>  <Analytics /> </Sidebar>)} />
+              <Route path="/reports" element={withProtection(<Sidebar>  <Reports /> </Sidebar>)} />
 
 
               <Route path="/feelings" element={withProtection(<AddFeelings />)} />
