@@ -115,3 +115,8 @@ to dump from server :
 mongodump \
   --uri="mongodb://admin:StrongPasswordHere@localhost:27017/ecommerce?authSource=admin" \
   --out ~/dump/ecommerce_$(date +%F_%H-%M)
+
+
+  info:
+  ~/data/db	✅ Your old data
+/opt/homebrew/var/mongodb	❌ Empty new DB
