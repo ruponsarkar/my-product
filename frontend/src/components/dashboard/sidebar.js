@@ -79,6 +79,7 @@ const Sidebar = ({ children }) => {
     { text: "Analytics", icon: <BarChartIcon />, path: "/Analytics" },
     { text: "POS", icon: <PointOfSaleIcon />, path: "/ViewProducts" },
     { text: "Reports", icon: <AssessmentIcon />, path: "/reports" },
+    ...(currentUser?.role === "admin" ? [{ text: "Users", icon: <SettingsIcon />, path: "/users" }] : []),
     { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
   ];
 

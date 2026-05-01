@@ -4,6 +4,7 @@ import { loginAPI } from "../../api/services/auth/login";
 import { getAuthToken, persistAuthData } from "../../utils/auth";
 
 export default function Login() {
+  const [tenantSlug, setTenantSlug] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +21,7 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      const res = await loginAPI({ email, password });
+      const res = await loginAPI({ tenantSlug, email, password });
 
       persistAuthData({
         token: res.data.token,
@@ -52,6 +53,16 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleLogin} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4">
+          <label className="mb-2 block text-sm font-medium text-slate-700">Tenant slug (optional)</label>
+          <input
+            type="text"
+            placeholder="Enter tenant slug if required"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+            value={tenantSlug}
+            onChange={(e) => setTenantSlug(e.target.value)}
+          />
+        </div>
         <div className="mb-4">
           <label className="mb-2 block text-sm font-medium text-slate-700">Email address</label>
           <input

@@ -17,6 +17,7 @@ import Login from "./pages/login/login";
 import Analytics from "./pages/analytics";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Reports from "./pages/reports";
+import Users from "./pages/users";
 
 const withProtection = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
 
@@ -38,6 +39,7 @@ function App() {
               <Route path="/sell/:slug" element={withProtection(<Sidebar>  <Sell /> </Sidebar>)} />
               <Route path="/order/:slug" element={withProtection(<Sidebar>  <Order /> </Sidebar>)} />
               <Route path="/Analytics" element={withProtection(<Sidebar>  <Analytics /> </Sidebar>)} />
+              <Route path="/users" element={withProtection(<Sidebar>  <Users /> </Sidebar>)} />
               <Route path="/reports" element={withProtection(<Sidebar>  <Reports /> </Sidebar>)} />
 
 
