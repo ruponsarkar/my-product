@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import Analytic from "../models/analytic.model";
-import Product from "../models/product.model";
-import Order from "../models/order.model";
+import { getTenantModels } from "../services/tenant.service";
 
 export const totalSalesSummary = async (req: Request, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
+    console.log("OrderOrder", Order);
+    
     const result = await Order.aggregate([
       {
         $group: {
@@ -29,7 +30,9 @@ export const totalSalesSummary = async (req: Request, res: Response) => {
         totalTax: 0,
       }
     );
-  } catch {
+  } catch(e) {
+    console.log("error ", e);
+    
     res.status(500).json({ message: "Failed to fetch summary" });
   }
 };
@@ -37,6 +40,7 @@ export const totalSalesSummary = async (req: Request, res: Response) => {
 
 export const salesByDate = async (req: Request, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const { type = "daily" } = req.query;
 
     let startDate: Date;
@@ -96,6 +100,7 @@ export const salesByDate = async (req: Request, res: Response) => {
 
 export const paymentBreakdown = async (req: Request, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const data = await Order.aggregate([
       {
         $group: {
@@ -114,6 +119,7 @@ export const paymentBreakdown = async (req: Request, res: Response) => {
 
 export const topSellingProducts = async (req: Request, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const limit = Number(req.query.limit) || 10;
 
     const data = await Order.aggregate([
@@ -150,6 +156,7 @@ export const topSellingProducts = async (req: Request, res: Response) => {
 
 export const netProfit = async (req: Request, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const data = await Order.aggregate([
       { $unwind: "$items" },
       {
@@ -206,6 +213,8 @@ export const netProfit = async (req: Request, res: Response) => {
 
 export const hourlySales = async (req: Request, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
+
     // 📅 Start & end of today
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -253,6 +262,7 @@ export const hourlySales = async (req: Request, res: Response) => {
 
 export const ordersByUser = async (req: Request, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const data = await Order.aggregate([
       {
         $group: {
@@ -288,6 +298,7 @@ export const customReport = async (req: Request, res: Response) => {
   // }
 
   try {
+    const { Order } = await getTenantModels(req);
     const { from, to, payment_type, status } = req.body;
 
     const match: any = {};

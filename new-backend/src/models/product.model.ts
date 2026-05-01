@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Document, Connection, Model } from "mongoose";
 
 export interface IProduct extends Document {
   name: string;
@@ -141,5 +141,10 @@ const ProductSchema = new Schema(
 );
 
 ProductSchema.index({ name: "text", description: "text" });
+
+export const getProductModel = (conn: Connection, collectionName?: string): Model<IProduct> => {
+  if (conn.models.Product) return conn.models.Product as Model<IProduct>;
+  return conn.model<IProduct>("Product", ProductSchema, collectionName);
+};
 
 export default model("Product", ProductSchema);

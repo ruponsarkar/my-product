@@ -1,7 +1,7 @@
 import { Request, Response, RequestHandler } from "express";
-import Product, { IProduct } from "../models/product.model";
 import { FilterQuery } from "mongoose";
 import slugify from "slugify";
+import { getTenantModels } from "../services/tenant.service";
 
 import path from "path";
 import fs from "fs";
@@ -17,6 +17,11 @@ const removeFile = (filename: string) => {
   } catch (e) {
     console.error("removeFile error:", e);
   }
+};
+
+const getTenantProductModel = async (req: Request & { user?: any }) => {
+  const { Product } = await getTenantModels(req);
+  return Product;
 };
 
 type MulterFile = Express.Multer.File;
@@ -98,7 +103,8 @@ export const addProductImages: RequestHandler = async (req, res) => {
       };
     });
 
-    // ensure product exists
+    const Product = await getTenantProductModel(req);
+
     const product = await Product.findById(id);
     if (!product) {
       files.forEach((f) => removeFile(f.filename));
@@ -180,6 +186,8 @@ export const getProducts = async (req: Request, res: Response) => {
     }
 
     // run queries (split to avoid type inference issues in Promise.all)
+    const Product = await getTenantProductModel(req);
+
     const total = await Product.countDocuments(filter as any).exec();
 
     const data = await Product.find(filter as any)
@@ -218,6 +226,7 @@ export const getProductByIdOrSlug = async (req: Request, res: Response) => {
     // Ensure id is treated as string for the regex test
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(id));
 
+    const Product = await getTenantProductModel(req);
     const product = isObjectId
       ? await Product.findById(id)
       : await Product.findOne({ slug: id });
@@ -241,6 +250,7 @@ export const getProductBarcodeOrSku = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Missing Barcode or SKU" });
     }
 
+    const Product = await getTenantProductModel(req);
     const product = await Product.findOne({
       $or: [{ barcode: code }, { sku: code }],
     });
@@ -258,6 +268,8 @@ export const getProductBarcodeOrSku = async (req: Request, res: Response) => {
 
 export const saveProduct = async (req: Request, res: Response) => {
   try {
+    const Product = await getTenantProductModel(req);
+
     // base slug
     let baseSlug = slugify(req.body.name, { lower: true, strict: true });
     let slug = baseSlug;
@@ -280,6 +292,7 @@ export const saveProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
   try {
+    const Product = await getTenantProductModel(req);
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
@@ -292,10 +305,12 @@ export const updateProduct = async (req: Request, res: Response) => {
 
 export const getLastSkuNumber = async (req: Request, res: Response) => {
   try {
+    const Product = await getTenantProductModel(req);
+
     // const prefix = "BOT-MIL-";
     const { prefix } = req.params;
 
-    const lastProduct = await Product.findOne(
+    const lastProduct: any = await Product.findOne(
       { sku: { $regex: `^${prefix}` } }, // starts with BOT-MIL-
       { sku: 1 }
     )
@@ -324,6 +339,7 @@ export const deleteProductImages = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "No images provided" });
     }
 
+    const Product = await getTenantProductModel(req);
     const product: any = await Product.findById(id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });

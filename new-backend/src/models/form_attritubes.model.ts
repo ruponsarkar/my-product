@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Document, Connection, Model } from "mongoose";
 
 export interface IFormAttributes extends Document {
   name: string; // field key (e.g. "email")
@@ -44,5 +44,10 @@ const FormAttributesSchema = new Schema<IFormAttributes>(
   },
   { timestamps: true }
 );
+
+export const getFormAttributesModel = (conn: Connection, collectionName?: string): Model<IFormAttributes> => {
+  if (conn.models.Form_attributes) return conn.models.Form_attributes as Model<IFormAttributes>;
+  return conn.model<IFormAttributes>("Form_attributes", FormAttributesSchema, collectionName);
+};
 
 export default model<IFormAttributes>("Form_attributes", FormAttributesSchema);

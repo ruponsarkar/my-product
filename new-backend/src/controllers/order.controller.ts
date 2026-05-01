@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
-import Order from "../models/order.model";
-import Product from "../models/product.model";
+import { getTenantModels } from "../services/tenant.service";
 
 // helper to generate ORDER ID like ORD0001
-const generateOrderId = async () => {
+const generateOrderId = async (Order: any) => {
   const count = await Order.countDocuments();
   return `ORD${String(count + 1).padStart(4, "0")}`;
 };
@@ -34,7 +33,8 @@ export const createOrder = async (
       return res.status(400).json({ message: "Payment type is required" });
     }
 
-    const order_id = await generateOrderId();
+    const { Order } = await getTenantModels(req);
+    const order_id = await generateOrderId(Order);
     console.log("user ", req.user);
 
     const order = new Order({
@@ -59,7 +59,7 @@ export const createOrder = async (
     await order.save();
 
     // decrement stock
-    await removeStock(items);
+    await removeStock(items, req);
 
     res.status(201).json({
       message: "Order placed successfully",
@@ -76,6 +76,7 @@ export const getMyOrders = async (
   res: Response
 ) => {
   try {
+    const { Order } = await getTenantModels(req);
     const orders = await Order.find({ user: req.user.id })
       .populate("items.product")
       .sort({ createdAt: -1 });
@@ -87,8 +88,9 @@ export const getMyOrders = async (
   }
 };
 
-const removeStock = async (items: any[]) => {
+const removeStock = async (items: any[], req: Request & { user?: any }) => {
   if (!items.length) return;
+  const { Product } = await getTenantModels(req);
 
   const bulkOps = items.map((item) => ({
     updateOne: {

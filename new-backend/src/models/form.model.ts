@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from "mongoose";
+import { Schema, model, Document, Types, Connection, Model } from "mongoose";
 
 export interface IForm extends Document {
   formName: string;
@@ -23,5 +23,10 @@ const FormSchema = new Schema<IForm>(
 
 // Indexes for faster searches
 FormSchema.index({ formName: "text", description: "text" });
+
+export const getFormModel = (conn: Connection, collectionName?: string): Model<IForm> => {
+  if (conn.models.Form) return conn.models.Form as Model<IForm>;
+  return conn.model<IForm>("Form", FormSchema, collectionName);
+};
 
 export default model<IForm>("Form", FormSchema);

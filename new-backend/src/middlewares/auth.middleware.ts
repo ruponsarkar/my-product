@@ -17,6 +17,7 @@ export const authMiddleware = (
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: string;
+      tenantId?: string;
     };
     req.user = decoded;
     next();
