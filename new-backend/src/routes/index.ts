@@ -10,6 +10,7 @@ import authRoutes from "./auth.routes";
 import userRoutes from "./user.routes";
 import productRoutes from "./product.routes";
 import orderRoutes from "./order.routes";
+import settingsRoutes from "./settings.routes";
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/products", productRoutes);
 router.use("/orders", orderRoutes); 
+router.use("/settings", settingsRoutes);
 
 router.use('/forms', formRoutes);
 router.use('/form_attritubess', form_attritubesRoutes);

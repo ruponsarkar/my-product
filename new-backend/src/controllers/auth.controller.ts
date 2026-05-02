@@ -72,6 +72,18 @@ export const register = async (req: Request, res: Response) => {
     const dbName = `${dbPrefix}${tenantId}`;
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    let tenantSettings: any = {};
+    if (typeof settings === 'string') {
+      try {
+        tenantSettings = JSON.parse(settings || '{}');
+      } catch (parseError) {
+        console.warn('Unable to parse tenant settings string; defaulting to empty object.', parseError);
+        tenantSettings = {};
+      }
+    } else {
+      tenantSettings = settings || {};
+    }
+
     const tenant = new Tenant({
       tenantId,
       name: accountName || name || tenantSlug,
@@ -79,7 +91,7 @@ export const register = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       dbName,
-      settings: settings || {},
+      settings: tenantSettings,
     });
     await tenant.save();
 
@@ -141,9 +153,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'email and password are required' });
     }
 
-    const tenant = tenantSlug || tenantId
-      ? await findTenant({ tenantId, tenantSlug })
-      : await resolveTenant({ email });
+    const tenant = await findTenant({ tenantId, tenantSlug, email });
 
     if (!tenant) {
       return res.status(400).json({ message: 'Tenant not found' });
