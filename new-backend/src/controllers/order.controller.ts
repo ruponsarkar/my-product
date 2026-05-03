@@ -71,6 +71,71 @@ export const createOrder = async (
   }
 };
 
+export const getOrders = async (
+  req: Request & { user?: any },
+  res: Response
+) => {
+  try {
+    const { Order } = await getTenantModels(req);
+    const { startDate, endDate, paymentType, user: userId, credit } = req.query;
+
+    const query: any = {};
+
+    const isAdmin = req.user?.role === "admin";
+    if (isAdmin) {
+      if (userId && typeof userId === "string") {
+        query.user = userId;
+      }
+    } else {
+      query.user = req.user.id;
+    }
+
+    if (typeof paymentType === "string") {
+      if (paymentType === "online") {
+        query.payment_type = "online";
+      } else if (paymentType === "offline") {
+        query.payment_type = "cash";
+      } else if (paymentType === "credit") {
+        query.payment_type = "credit";
+      }
+    }
+
+    if (typeof credit === "string" && credit.toLowerCase() === "true") {
+      query.credit = { $gt: 0 };
+    }
+
+    if (typeof startDate === "string" || typeof endDate === "string") {
+      query.createdAt = {};
+      if (typeof startDate === "string" && startDate) {
+        const begin = new Date(startDate);
+        if (!Number.isNaN(begin.getTime())) {
+          query.createdAt.$gte = begin;
+        }
+      }
+      if (typeof endDate === "string" && endDate) {
+        const end = new Date(endDate);
+        if (!Number.isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999);
+          query.createdAt.$lte = end;
+        }
+      }
+      if (Object.keys(query.createdAt).length === 0) {
+        delete query.createdAt;
+      }
+    }
+
+    const orders = await Order.find(query)
+      .populate("user", "name email role")
+      .populate("items.product", "name price")
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
+};
+
 export const getMyOrders = async (
   req: Request & { user?: any },
   res: Response
@@ -79,6 +144,7 @@ export const getMyOrders = async (
     const { Order } = await getTenantModels(req);
     const orders = await Order.find({ user: req.user.id })
       .populate("items.product")
+      .populate("user", "name email role")
       .sort({ createdAt: -1 });
 
     res.json(orders);

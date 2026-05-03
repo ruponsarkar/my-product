@@ -25,6 +25,7 @@ import {
   Category as CategoryIcon,
   PointOfSale as PointOfSaleIcon,
   Assessment as AssessmentIcon,
+  ReceiptLong as ReceiptLongIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -77,6 +78,7 @@ const Sidebar = ({ children }) => {
       ],
     },
     { text: "Analytics", icon: <BarChartIcon />, path: "/Analytics" },
+    { text: "Orders", icon: <ReceiptLongIcon />, path: "/orders" },
     { text: "POS", icon: <PointOfSaleIcon />, path: "/ViewProducts" },
     { text: "Reports", icon: <AssessmentIcon />, path: "/reports" },
     ...(currentUser?.role === "admin" ? [{ text: "Users", icon: <SettingsIcon />, path: "/users" }] : []),
