@@ -80,9 +80,13 @@ const Sidebar = ({ children }) => {
     { text: "Analytics", icon: <BarChartIcon />, path: "/Analytics" },
     { text: "Orders", icon: <ReceiptLongIcon />, path: "/orders" },
     { text: "POS", icon: <PointOfSaleIcon />, path: "/ViewProducts" },
-    { text: "Reports", icon: <AssessmentIcon />, path: "/reports" },
-    ...(currentUser?.role === "admin" ? [{ text: "Users", icon: <SettingsIcon />, path: "/users" }] : []),
-    { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
+    ...(currentUser?.role === "admin"
+      ? [
+          { text: "Reports", icon: <AssessmentIcon />, path: "/reports" },
+          { text: "Users", icon: <SettingsIcon />, path: "/users" },
+          { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
+        ]
+      : []),
   ];
 
   const isActivePath = (path) => {

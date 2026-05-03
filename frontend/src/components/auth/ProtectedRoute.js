@@ -1,7 +1,9 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import api from "../../api/axios";
-import { clearAuthData, getAuthToken } from "../../utils/auth";
+import { clearAuthData, getAuthToken, getStoredUser } from "../../utils/auth";
+
+const adminPaths = ["/settings", "/reports", "/users"];
 
 export default function ProtectedRoute({ children }) {
   const location = useLocation();
@@ -51,6 +53,14 @@ export default function ProtectedRoute({ children }) {
 
   if (status === "unauthenticated") {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  const currentUser = getStoredUser();
+  if (status === "authenticated" && currentUser?.role !== "admin") {
+    const normalizedPath = location.pathname.toLowerCase();
+    if (adminPaths.some((path) => normalizedPath === path || normalizedPath.startsWith(`${path}/`))) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return children;
