@@ -10,6 +10,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   Typography,
@@ -25,11 +26,16 @@ const paymentOptions = [
   { value: "credit", label: "Credit" },
 ];
 
+const DATA_FETCH_LIMIT = 15;
+
 export default function Orders() {
   const currentUser = getStoredUser();
   const isAdmin = currentUser?.role === "admin";
 
   const [orders, setOrders] = useState([]);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(DATA_FETCH_LIMIT);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -40,19 +46,25 @@ export default function Orders() {
     user: "",
   });
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (requestedPage = page, requestedRowsPerPage = rowsPerPage) => {
     setLoading(true);
     setError("");
 
     try {
-      const params = {};
+      const params = {
+        page: requestedPage + 1,
+        limit: requestedRowsPerPage,
+      };
       if (filters.fromDate) params.startDate = filters.fromDate;
       if (filters.toDate) params.endDate = filters.toDate;
       if (filters.paymentType && filters.paymentType !== "all") params.paymentType = filters.paymentType;
       if (isAdmin && filters.user) params.user = filters.user;
 
       const response = await getOrders(params);
-      setOrders(response.data || []);
+      setOrders(response.data.data || []);
+      setTotalOrders(response.data.total || 0);
+      setPage(response.data.page ? response.data.page - 1 : requestedPage);
+      setRowsPerPage(response.data.limit || requestedRowsPerPage);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Unable to load orders.");
@@ -72,8 +84,8 @@ export default function Orders() {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(page, rowsPerPage);
+  }, [page, rowsPerPage]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -89,14 +101,27 @@ export default function Orders() {
   };
 
   const handleApplyFilters = () => {
-    fetchOrders();
+    setPage((prevPage) => {
+      if (prevPage !== 0) {
+        return 0;
+      }
+      fetchOrders(0, rowsPerPage);
+      return prevPage;
+    });
   };
 
   const handleResetFilters = () => {
     setFilters({ fromDate: "", toDate: "", paymentType: "all", user: "" });
     setError("");
     setOrders([]);
-    setTimeout(fetchOrders, 0);
+    setRowsPerPage(DATA_FETCH_LIMIT);
+    setPage((prevPage) => {
+      if (prevPage !== 0) {
+        return 0;
+      }
+      fetchOrders(0, DATA_FETCH_LIMIT);
+      return prevPage;
+    });
   };
 
   return (
@@ -184,42 +209,58 @@ export default function Orders() {
             <Typography color="error">{error}</Typography>
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Order ID</TableCell>
-                  <TableCell>User</TableCell>
-                  <TableCell>Payment</TableCell>
-                  <TableCell>Total</TableCell>
-                  <TableCell>Credit</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Placed</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {orders.length === 0 ? (
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      No orders found.
-                    </TableCell>
+                    <TableCell>Order ID</TableCell>
+                    <TableCell>User</TableCell>
+                    <TableCell>Payment</TableCell>
+                    <TableCell>Total</TableCell>
+                    <TableCell>Credit</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Placed</TableCell>
                   </TableRow>
-                ) : (
-                  orders.map((order) => (
-                    <TableRow key={order._id} hover>
-                      <TableCell>{order.order_id}</TableCell>
-                      <TableCell>{order.user?.name || order.user?.email || "Unknown"}</TableCell>
-                      <TableCell>{order.payment_type}</TableCell>
-                      <TableCell>{order.total?.toLocaleString?.() ?? order.total ?? 0}</TableCell>
-                      <TableCell>{order.credit?.toLocaleString?.() ?? order.credit ?? 0}</TableCell>
-                      <TableCell>{order.status}</TableCell>
-                      <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                </TableHead>
+                <TableBody>
+                  {orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center">
+                        No orders found.
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ) : (
+                    orders.map((order) => (
+                      <TableRow key={order._id} hover>
+                        <TableCell>{order.order_id}</TableCell>
+                        <TableCell>{order.user?.name || order.user?.email || "Unknown"}</TableCell>
+                        <TableCell>{order.payment_type}</TableCell>
+                        <TableCell>{order.total?.toLocaleString?.() ?? order.total ?? 0}</TableCell>
+                        <TableCell>{order.credit?.toLocaleString?.() ?? order.credit ?? 0}</TableCell>
+                        <TableCell>{order.status}</TableCell>
+                        <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              component="div"
+              count={totalOrders}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(event) => {
+                const newRowsPerPage = parseInt(event.target.value, DATA_FETCH_LIMIT);
+                setRowsPerPage(newRowsPerPage);
+                setPage(0);
+              }}
+              rowsPerPageOptions={[5, 10, 20, 50]}
+              labelRowsPerPage="Rows per page"
+            />
+          </>
         )}
       </Paper>
     </Box>

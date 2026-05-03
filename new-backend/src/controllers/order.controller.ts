@@ -71,17 +71,25 @@ export const createOrder = async (
   }
 };
 
+const parsePositiveInt = (value: any, defaultValue: number) => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return defaultValue;
+  }
+  return parsed;
+};
+
 export const getOrders = async (
   req: Request & { user?: any },
   res: Response
 ) => {
   try {
     const { Order } = await getTenantModels(req);
-    const { startDate, endDate, paymentType, user: userId, credit } = req.query;
+    const { startDate, endDate, paymentType, user: userId, credit, page, limit } = req.query;
 
     const query: any = {};
-
     const isAdmin = req.user?.role === "admin";
+
     if (isAdmin) {
       if (userId && typeof userId === "string") {
         query.user = userId;
@@ -124,12 +132,25 @@ export const getOrders = async (
       }
     }
 
+    const pageNumber = parsePositiveInt(page, 1);
+    const pageSize = parsePositiveInt(limit, 10);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const total = await Order.countDocuments(query);
     const orders = await Order.find(query)
       .populate("user", "name email role")
       .populate("items.product", "name price")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize);
 
-    res.json(orders);
+    res.json({
+      data: orders,
+      total,
+      page: pageNumber,
+      limit: pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch orders" });
@@ -142,12 +163,28 @@ export const getMyOrders = async (
 ) => {
   try {
     const { Order } = await getTenantModels(req);
-    const orders = await Order.find({ user: req.user.id })
+    const { page, limit } = req.query;
+
+    const pageNumber = parsePositiveInt(page, 1);
+    const pageSize = parsePositiveInt(limit, 10);
+    const skip = (pageNumber - 1) * pageSize;
+    const query = { user: req.user.id };
+
+    const total = await Order.countDocuments(query);
+    const orders = await Order.find(query)
       .populate("items.product")
       .populate("user", "name email role")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize);
 
-    res.json(orders);
+    res.json({
+      data: orders,
+      total,
+      page: pageNumber,
+      limit: pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch orders" });
