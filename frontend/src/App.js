@@ -20,6 +20,7 @@ import Reports from "./pages/reports";
 import Users from "./pages/users";
 import Orders from "./pages/orders";
 import Settings from "./pages/settings";
+import Profile from "./pages/profile";
 
 const withProtection = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
 
@@ -41,6 +42,7 @@ function App() {
               <Route path="/sell/:slug" element={withProtection(<Sidebar>  <Sell /> </Sidebar>)} />
               <Route path="/order/:slug" element={withProtection(<Sidebar>  <Order /> </Sidebar>)} />
               <Route path="/Analytics" element={withProtection(<Sidebar>  <Analytics /> </Sidebar>)} />
+              <Route path="/profile" element={withProtection(<Sidebar>  <Profile /> </Sidebar>)} />
               <Route path="/orders" element={withProtection(<Sidebar>  <Orders /> </Sidebar>)} />
               <Route path="/users" element={withProtection(<Sidebar>  <Users /> </Sidebar>)} />
               <Route path="/settings" element={withProtection(<Sidebar>  <Settings /> </Sidebar>)} />

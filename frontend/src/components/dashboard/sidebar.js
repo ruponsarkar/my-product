@@ -19,6 +19,7 @@ import {
   Dashboard as DashboardIcon,
   BarChart as BarChartIcon,
   Settings as SettingsIcon,
+  Person as PersonIcon,
   ExpandLess,
   ExpandMore,
   Menu as MenuIcon,
@@ -80,6 +81,7 @@ const Sidebar = ({ children }) => {
     { text: "Analytics", icon: <BarChartIcon />, path: "/Analytics" },
     { text: "Orders", icon: <ReceiptLongIcon />, path: "/orders" },
     { text: "POS", icon: <PointOfSaleIcon />, path: "/ViewProducts" },
+    { text: "Profile", icon: <PersonIcon />, path: "/profile" },
     ...(currentUser?.role === "admin"
       ? [
           { text: "Reports", icon: <AssessmentIcon />, path: "/reports" },
