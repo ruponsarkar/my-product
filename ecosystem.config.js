@@ -11,7 +11,7 @@ module.exports = {
     },
     {
       name: "bill-app-backend",
-      cwd: "/var/www/billapp/my-product/backend",
+      cwd: "/var/www/billapp/my-product/new-backend",
       script: "npm",
       args: "run dev",
       env: {
