@@ -1,14 +1,36 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import api from "../../api/axios";
-import { clearAuthData, getAuthToken, getStoredUser } from "../../utils/auth";
+import {
+  AUTH_TOKEN_KEY,
+  clearAuthData,
+  getAuthToken,
+  getStoredUser,
+} from "../../utils/auth";
 
 const adminPaths = ["/settings", "/reports", "/users"];
 
 export default function ProtectedRoute({ children }) {
   const location = useLocation();
   const [status, setStatus] = React.useState("checking");
-  const token = getAuthToken();
+  const searchParams = React.useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
+  const queryToken = searchParams.get("token");
+  const token = queryToken || getAuthToken();
+  const sanitizedSearch = React.useMemo(() => {
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete("token");
+    const nextSearch = nextParams.toString();
+    return nextSearch ? `?${nextSearch}` : "";
+  }, [location.search]);
+
+  React.useEffect(() => {
+    if (queryToken && queryToken !== getAuthToken()) {
+      localStorage.setItem(AUTH_TOKEN_KEY, queryToken);
+    }
+  }, [queryToken]);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -53,6 +75,16 @@ export default function ProtectedRoute({ children }) {
 
   if (status === "unauthenticated") {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (status === "authenticated" && queryToken) {
+    return (
+      <Navigate
+        to={`${location.pathname}${sanitizedSearch}`}
+        replace
+        state={location.state}
+      />
+    );
   }
 
   const currentUser = getStoredUser();
