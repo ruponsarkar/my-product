@@ -134,7 +134,7 @@ export default function AddProduct() {
   // =======================================================
 
   return (
-    <div className="container">
+    <div className="container card p-3">
       <h2>Add / Update Product</h2>
 
       {step === 1 && <BasicInfoForm handleChange={handleChange} form={form} />}
@@ -162,15 +162,18 @@ export default function AddProduct() {
 
       <div className="d-flex justify-content-between mt-3">
         {step > 1 && (
-          <button onClick={() => setStep(step - 1)}>Previous</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setStep(step - 1)}>Previous</button>
         )}
 
         {step < totalSteps ? (
-          <button onClick={() => setStep(step + 1)}>Next</button>
+          <>
+          <div></div>
+          <button className="btn btn-primary btn-sm" onClick={() => setStep(step + 1)}>Next</button>
+          </>
         ) : id ? (
-          <button onClick={handleUpdate}>Update Product</button>
+          <button className="btn btn-primary btn-sm" onClick={handleUpdate}>Update Product</button>
         ) : (
-          <button onClick={onSave}>Save Product</button>
+          <button className="btn btn-primary btn-sm" onClick={onSave}>Save Product</button>
         )}
       </div>
     </div>

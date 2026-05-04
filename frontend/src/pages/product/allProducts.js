@@ -24,6 +24,13 @@ export default function AllProducts() {
   const [barcode, setBarcode] = useState();
 
   const [open, setOpen] = useState(false);
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
+
   const handleClose = () => {
     setOpen(false);
   };
@@ -57,17 +64,21 @@ export default function AllProducts() {
   }
 
   const defaultColumns = [
-    { key: "sku", label: "SKU", width: 140, sortable: true , format: (v) => 
+    { key: "sku", label: "SKU", width: 96, sortable: true , format: (v) => 
     { return <span className="cursor-pointer" onClick={() => {handleOpen(); setBarcode(v);}}>{v}</span>} },
-    { key: "barcode", label: "Barcode", width: 140, sortable: true , format: (v) => 
+    { key: "barcode", label: "Barcode", width: 112, sortable: true , format: (v) => 
     { return <span className="cursor-pointer" onClick={() => {handleOpen(); setBarcode(v);}}>{v}</span>} },
     // { key: "barcode", label: "Barcode", width: 140, sortable: true },
-    { key: "name", label: "Product Name", width: 360, sortable: true },
-    { key: "category", label: "Category", width: 180, sortable: true },
-    { key: "mrp", label: "MRP", width: 120, sortable: true },
-    { key: "sellingPrice", label: "Selling Price", width: 120, sortable: true },
-    { key: "stockQty", label: "Stock", width: 120, sortable: true },
-    { key: "createdAt", label: "Created", width: 180, sortable: true, format: (v) => new Date(v).toLocaleDateString() },
+    { key: "name", label: "Product Name", width: 240, sortable: true },
+    { key: "category", label: "Category", width: 120, sortable: true },
+    { key: "mrp", label: "MRP", width: 92, sortable: true, format: (v) => formatCurrency(v) },
+    { key: "sellingPrice", label: "Selling Price", width: 116, sortable: true, format: (v) => formatCurrency(v) },
+    { key: "stockQty", label: "Stock", width: 84, sortable: true, format: (v) => (
+      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${Number(v) <= 10 ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>
+        {v ?? 0}
+      </span>
+    ) },
+    { key: "createdAt", label: "Created", width: 108, sortable: true, format: (v) => new Date(v).toLocaleDateString() },
   ];
 
 
@@ -119,23 +130,35 @@ export default function AllProducts() {
   };
 
   return (
-    <div>
-      <div>
-        <DynamicProductTable
-          data={products}
-          total={total}
-          columns={defaultColumns}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(p) => setPage(p)}
-          onRowsPerPageChange={(r) => setRowsPerPage(r)}
-          onSearch={() => {}}
-          onSort={() => {}}
-          onSelectionChange={() => {}}
-          actions={defaultActions}
-        />
+    <div className="w-full max-w-none space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-sky-700 mb-1">Catalog</p>
+          <h1 className="text-2xl font-bold text-slate-950">Product Inventory</h1>
+          <p className="text-sm text-slate-500 mt-1">Review stock, pricing, barcodes, and product actions.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate("/addProduct")}
+          className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+        >
+          Add Product
+        </button>
       </div>
 
+      <DynamicProductTable
+        data={products}
+        total={total}
+        columns={defaultColumns}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        onPageChange={(p) => setPage(p)}
+        onRowsPerPageChange={(r) => setRowsPerPage(r)}
+        onSearch={() => {}}
+        onSort={() => {}}
+        onSelectionChange={() => {}}
+        actions={defaultActions}
+      />
 
       <Modal open={open} handleClose={handleClose} title="Product Barcode" content={<BarcodePreview value={barcode} />} />
     </div>

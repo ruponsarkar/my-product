@@ -1,37 +1,74 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { getProductByIdOrSlug } from "../../api/services/product/productApi";
+import { createOrder } from "../../api/services/order/orderApi";
 
-export default function Sell({  }) {
+export default function Sell() {
   const { slug } = useParams();
-  const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [selectedAttrs, setSelectedAttrs] = useState({
-    weight: product?.attributes?.weight?.[0] ?? null,
-    size: product?.attributes?.size?.[0] ?? null,
-    color: product?.attributes?.color?.[0] ?? null,
+    weight: null,
+    size: null,
+    color: null,
   });
   const [qty, setQty] = useState(1);
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [paymentType, setPaymentType] = useState("cash");
+  const [paidAmount, setPaidAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
+  const getData = async () => {
+    if (!slug) return;
+    const response = await getProductByIdOrSlug(slug);
+    setProduct(response.data);
+  };
 
-  useEffect(()=>{
+  useEffect(() => {
     getData();
+  }, [slug]);
 
-  },[]);
+  useEffect(() => {
+    if (!product) return;
 
-const getData=async ()=>{
-    if(slug){
-        const response = await getProductByIdOrSlug(slug);
-        console.log("response", response.data);
-        setProduct(response.data);
+    setSelectedAttrs({
+      weight: product?.attributes?.weight?.[0] ?? null,
+      size: product?.attributes?.size?.[0] ?? null,
+      color: product?.attributes?.color?.[0] ?? null,
+    });
+  }, [product]);
+
+  const unitPrice = useMemo(() => {
+    const sellingPrice = Number(product?.sellingPrice || 0);
+    const discountPercent = Number(product?.discount || 0);
+    return sellingPrice * (100 - discountPercent) / 100;
+  }, [product]);
+
+  const subtotal = useMemo(() => unitPrice * qty, [qty, unitPrice]);
+  const discountAmount = useMemo(() => {
+    const mrp = Number(product?.mrp || product?.sellingPrice || 0);
+    const basePrice = Number(product?.sellingPrice || mrp || 0);
+    const discountedUnit = Math.max(basePrice - unitPrice, 0);
+    return discountedUnit * qty;
+  }, [product, qty, unitPrice]);
+  const taxAmount = useMemo(() => {
+    const taxPercent = Number(product?.tax || 0);
+    return subtotal * taxPercent / 100;
+  }, [product, subtotal]);
+  const total = useMemo(() => subtotal + taxAmount, [subtotal, taxAmount]);
+  const normalizedPaidAmount = useMemo(() => {
+    if (paymentType === "credit") {
+      return Math.max(0, Number(paidAmount || 0));
     }
-      
-}
-
-  const priceAfterDiscount =
-    (product?.sellingPrice * (100 - (product?.discount || 0))) / 100;
+    return total;
+  }, [paidAmount, paymentType, total]);
+  const creditAmount = useMemo(
+    () => Math.max(total - normalizedPaidAmount, 0),
+    [normalizedPaidAmount, total]
+  );
 
   const formatCurrency = (v) => {
     if (typeof Intl !== "undefined")
@@ -53,21 +90,88 @@ const getData=async ()=>{
   };
 
   const getImgUrl = (url) => {
-    let img = process.env.REACT_APP_BACKEND+url
-    console.log("img", img);
-
+    if (!url) return "";
+    const img = `${process.env.REACT_APP_BACKEND || ""}${url}`;
     return img;
   };
 
-  const handleBuyNow = () => {
-    navigate("/order/new", {
-      state: {
-        product,
-        qty,
-        attributes: selectedAttrs,
-      },
-    });
+  const handlePlaceOrder = async () => {
+    if (!product?._id) {
+      setErrorMessage("Product details are not available yet.");
+      return;
+    }
+
+    if (qty < 1) {
+      setErrorMessage("Quantity must be at least 1.");
+      return;
+    }
+
+    if (qty > Number(product?.stockQty || 0)) {
+      setErrorMessage("Requested quantity is more than available stock.");
+      return;
+    }
+
+    if (!paymentType) {
+      setErrorMessage("Please select a payment type.");
+      return;
+    }
+
+    if (paymentType === "credit" && normalizedPaidAmount > total) {
+      setErrorMessage("Paid amount cannot be greater than total for a credit order.");
+      return;
+    }
+
+    setSubmitting(true);
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    try {
+      const payload = {
+        items: [
+          {
+            product: product._id,
+            quantity: qty,
+            price: Number(unitPrice.toFixed(2)),
+          },
+        ],
+        subtotal: Number(subtotal.toFixed(2)),
+        discount: Number(discountAmount.toFixed(2)),
+        tax: Number(taxAmount.toFixed(2)),
+        total: Number(total.toFixed(2)),
+        paidAmount: Number(normalizedPaidAmount.toFixed(2)),
+        credit: Number(creditAmount.toFixed(2)),
+        payment_type: paymentType,
+        customer_phone: customerPhone.trim() || undefined,
+      };
+
+      const response = await createOrder(payload);
+      const orderId = response?.data?.order?.order_id;
+
+      setSuccessMessage(orderId ? `Order ${orderId} placed successfully.` : "Order placed successfully.");
+      setProduct((currentProduct) =>
+        currentProduct
+          ? {
+              ...currentProduct,
+              stockQty: Math.max(Number(currentProduct.stockQty || 0) - qty, 0),
+            }
+          : currentProduct
+      );
+      setQty(1);
+      setCustomerPhone("");
+      setPaidAmount("");
+    } catch (error) {
+      setErrorMessage(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Unable to place the order right now."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const isOutOfStock = Number(product?.stockQty || 0) <= 0;
+  const canSubmit = product?._id && !isOutOfStock && !submitting;
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -137,7 +241,7 @@ const getData=async ()=>{
 
                 <div className="mt-3 flex items-center gap-3">
                   <div className="text-3xl font-bold">
-                    {formatCurrency(priceAfterDiscount)}
+                    {formatCurrency(unitPrice)}
                   </div>
                   {product?.discount ? (
                     <div className="text-sm text-gray-500 line-through">
@@ -238,7 +342,7 @@ const getData=async ()=>{
                     <div className="px-4">{qty}</div>
                     <button
                       onClick={() =>
-                        setQty((q) => Math.min(product?.stockQty, q + 1))
+                        setQty((q) => Math.min(Number(product?.stockQty || 0), q + 1))
                       }
                       className="px-3"
                     >
@@ -246,10 +350,124 @@ const getData=async ()=>{
                     </button>
                   </div>
 
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                    Add to cart
-                  </button>
-                  <button className="border px-4 py-2 rounded" onClick={handleBuyNow}>Buy Now</button>
+                  <div className="text-sm text-gray-500">
+                    Line total: <span className="font-semibold text-slate-900">{formatCurrency(total)}</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">Create order</h3>
+                        <p className="text-sm text-slate-500">
+                          Place the order directly from this screen using the new order API.
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isOutOfStock ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"}`}>
+                        {isOutOfStock ? "Out of stock" : "Ready to order"}
+                      </span>
+                    </div>
+
+                    {successMessage ? (
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                        {successMessage}
+                      </div>
+                    ) : null}
+
+                    {errorMessage ? (
+                      <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                        {errorMessage}
+                      </div>
+                    ) : null}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-700">
+                          Customer phone
+                        </label>
+                        <input
+                          type="tel"
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          placeholder="Optional phone number"
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-700">
+                          Payment type
+                        </label>
+                        <select
+                          value={paymentType}
+                          onChange={(e) => setPaymentType(e.target.value)}
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+                        >
+                          <option value="cash">Cash</option>
+                          <option value="online">Online</option>
+                          <option value="credit">Credit</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-700">
+                          Paid amount
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={paymentType === "credit" ? paidAmount : total.toFixed(2)}
+                          onChange={(e) => setPaidAmount(e.target.value)}
+                          disabled={paymentType !== "credit"}
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:bg-slate-100 disabled:text-slate-500"
+                        />
+                        <p className="mt-1 text-xs text-slate-500">
+                          {paymentType === "credit"
+                            ? "Enter the amount received now. Remaining balance will be saved as credit."
+                            : "For cash and online payments, the full amount is collected automatically."}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border border-slate-200 bg-white p-3">
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>Subtotal</span>
+                          <span>{formatCurrency(subtotal)}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
+                          <span>Discount</span>
+                          <span>- {formatCurrency(discountAmount)}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
+                          <span>Tax</span>
+                          <span>+ {formatCurrency(taxAmount)}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
+                          <span>Credit</span>
+                          <span>{formatCurrency(creditAmount)}</span>
+                        </div>
+                        <div className="mt-3 border-t border-slate-200 pt-3 flex items-center justify-between font-semibold text-slate-900">
+                          <span>Total</span>
+                          <span>{formatCurrency(total)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        type="button"
+                        onClick={handlePlaceOrder}
+                        disabled={!canSubmit}
+                        className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        {submitting ? "Placing order..." : "Place order"}
+                      </button>
+                      <div className="text-sm text-slate-500 self-center">
+                        Orders submit to the authenticated `POST /orders` endpoint and reduce stock after success.
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-4 text-sm text-gray-600 grid grid-cols-2 gap-2">

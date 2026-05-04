@@ -1,0 +1,317 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteProductImages = exports.getLastSkuNumber = exports.updateProduct = exports.saveProduct = exports.getProductBarcodeOrSku = exports.getProductByIdOrSlug = exports.getProducts = exports.addProductImages = void 0;
+const product_model_1 = __importDefault(require("../models/product.model"));
+const slugify_1 = __importDefault(require("slugify"));
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
+const UPLOADS_DIR = path_1.default.join(process.cwd(), "uploads");
+const PUBLIC_PREFIX = "/uploads";
+const publicPath = (filename) => `${PUBLIC_PREFIX}/${filename}`;
+const removeFile = (filename) => {
+    try {
+        const fp = path_1.default.join(UPLOADS_DIR, filename);
+        if (fs_1.default.existsSync(fp))
+            fs_1.default.unlinkSync(fp);
+    }
+    catch (e) {
+        console.error("removeFile error:", e);
+    }
+};
+/**
+ * Parse attributes payload into an array aligned with files array.
+ * raw may be:
+ *  - object keyed by filename -> { "photo.jpg": { color: ['red'] }, ... }
+ *  - array matching files order -> [ { color: [...] }, { ... } ]
+ *  - single object -> apply to all files (not recommended)
+ */
+function buildAttributesPerFile(raw, files) {
+    const empty = () => ({});
+    if (!raw)
+        return files.map(empty);
+    let parsed = raw;
+    if (typeof raw === "string") {
+        try {
+            parsed = JSON.parse(raw);
+        }
+        catch (e) {
+            // invalid JSON -> treat as none
+            return files.map(empty);
+        }
+    }
+    // If object keyed by filename
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return files.map((f) => {
+            // prefer originalname, then filename (Multer generated)
+            const key = parsed[f.originalname] ?? parsed[f.filename];
+            return key && typeof key === "object" ? key : {};
+        });
+    }
+    // If it's an array matching files length
+    if (Array.isArray(parsed) && parsed.length === files.length) {
+        return parsed.map((p) => (p && typeof p === "object" ? p : {}));
+    }
+    // If parsed is an object but not keyed by filename, apply same to all
+    if (parsed && typeof parsed === "object") {
+        return files.map(() => parsed);
+    }
+    return files.map(empty);
+}
+const addProductImages = async (req, res) => {
+    const files = Array.isArray(req.files)
+        ? req.files
+        : [];
+    try {
+        const { id } = req.params;
+        if (!files.length)
+            return res.status(400).json({ message: "No images uploaded" });
+        // parse attributes provided in form-data field "attributes"
+        const rawAttributes = req.body?.attributes;
+        const attributesPerFile = buildAttributesPerFile(rawAttributes, files);
+        // build image subdocuments
+        const subdocs = files.map((f, i) => {
+            const attrs = attributesPerFile[i] ?? {};
+            // ensure every value is an array of strings
+            const normalized = {};
+            Object.entries(attrs).forEach(([k, v]) => {
+                if (Array.isArray(v))
+                    normalized[k] = v.map(String);
+                else if (v != null)
+                    normalized[k] = [String(v)];
+                else
+                    normalized[k] = [];
+            });
+            return {
+                url: publicPath(f.filename),
+                attributes: normalized,
+            };
+        });
+        // ensure product exists
+        const product = await product_model_1.default.findById(id);
+        if (!product) {
+            files.forEach((f) => removeFile(f.filename));
+            return res.status(404).json({ message: "Product not found" });
+        }
+        const updated = await product_model_1.default.findByIdAndUpdate(id, { $push: { images: { $each: subdocs } } }, { new: true }).lean();
+        return res
+            .status(200)
+            .json({ message: "Images uploaded", product: updated });
+    }
+    catch (err) {
+        console.error("addProductImages error:", err);
+        // cleanup uploaded files on error
+        if (Array.isArray(req.files)) {
+            req.files.forEach((f) => {
+                if (f?.filename)
+                    removeFile(f.filename);
+            });
+        }
+        return res
+            .status(500)
+            .json({ message: "Internal server error", error: err?.message });
+    }
+};
+exports.addProductImages = addProductImages;
+// ======================================================================
+// old codes
+// export const getProducts = async (req: Request, res: Response) => {
+//   try {
+//     const products = await Product.find();
+//     res.json(products);
+//   } catch (err) {
+//     res.status(500).json({ error: err });
+//   }
+// };
+function escapeRegex(input) {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+const getProducts = async (req, res) => {
+    try {
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
+        const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+        const sortBy = typeof req.query.sortBy === "string" ? req.query.sortBy : "createdAt";
+        const sortOrder = req.query.sortOrder === "desc" ? -1 : 1;
+        const skip = (page - 1) * limit;
+        // keep filter as plain object to avoid TS inference explosion
+        const filter = {};
+        if (search) {
+            const regex = new RegExp(escapeRegex(search), "i");
+            // keep $or as plain any[] to avoid huge union types
+            const orFilters = [
+                { name: regex },
+                { sku: regex },
+                { barcode: regex },
+                { category: regex },
+            ];
+            filter.$or = orFilters;
+        }
+        // example: add category filter if provided
+        if (req.query.category) {
+            filter.category = String(req.query.category);
+        }
+        // run queries (split to avoid type inference issues in Promise.all)
+        const total = await product_model_1.default.countDocuments(filter).exec();
+        const data = await product_model_1.default.find(filter)
+            .sort({ [sortBy]: sortOrder })
+            .skip(skip)
+            .limit(limit)
+            .lean()
+            .exec();
+        const pages = Math.max(1, Math.ceil(total / limit));
+        return res.json({ data, total, page, pages, limit });
+    }
+    catch (err) {
+        console.error("getProducts error:", err);
+        return res.status(500).json({ error: "Server error" });
+    }
+};
+exports.getProducts = getProducts;
+// export const getProductById = async (req: Request, res: Response) => {
+//   try {
+//     const product = await Product.findById(req.params.id);
+//     if (!product) return res.status(404).json({ message: "Not found" });
+//     res.json(product);
+//   } catch (err) {
+//     res.status(500).json({ error: err });
+//   }
+// };
+const getProductByIdOrSlug = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ message: "Missing ID or slug" });
+        }
+        // Ensure id is treated as string for the regex test
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(id));
+        const product = isObjectId
+            ? await product_model_1.default.findById(id)
+            : await product_model_1.default.findOne({ slug: id });
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+        res.status(200).json(product);
+    }
+    catch (error) {
+        console.error("Error fetching product:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+exports.getProductByIdOrSlug = getProductByIdOrSlug;
+const getProductBarcodeOrSku = async (req, res) => {
+    try {
+        const { code } = req.params;
+        if (!code) {
+            return res.status(400).json({ message: "Missing Barcode or SKU" });
+        }
+        const product = await product_model_1.default.findOne({
+            $or: [{ barcode: code }, { sku: code }],
+        });
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+        res.status(200).json(product);
+    }
+    catch (error) {
+        console.error("Error fetching product:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+exports.getProductBarcodeOrSku = getProductBarcodeOrSku;
+const saveProduct = async (req, res) => {
+    try {
+        // base slug
+        let baseSlug = (0, slugify_1.default)(req.body.name, { lower: true, strict: true });
+        let slug = baseSlug;
+        // check if slug exists
+        let count = 1;
+        while (await product_model_1.default.findOne({ slug })) {
+            slug = `${baseSlug}-${count}`;
+            count++;
+        }
+        const data = { slug, ...req.body };
+        const product = new product_model_1.default(data);
+        await product.save();
+        res.status(201).json(product);
+    }
+    catch (err) {
+        res.status(500).json({ error: err });
+    }
+};
+exports.saveProduct = saveProduct;
+const updateProduct = async (req, res) => {
+    try {
+        const product = await product_model_1.default.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+        });
+        if (!product)
+            return res.status(404).json({ message: "Not found" });
+        res.json(product);
+    }
+    catch (err) {
+        res.status(500).json({ error: err });
+    }
+};
+exports.updateProduct = updateProduct;
+const getLastSkuNumber = async (req, res) => {
+    try {
+        // const prefix = "BOT-MIL-";
+        const { prefix } = req.params;
+        const lastProduct = await product_model_1.default.findOne({ sku: { $regex: `^${prefix}` } }, // starts with BOT-MIL-
+        { sku: 1 })
+            .sort({ sku: -1 }) // lexicographically works because of padding
+            .lean();
+        let lastNumber = 0;
+        if (lastProduct?.sku) {
+            lastNumber = Number(lastProduct.sku.split("-").pop());
+        }
+        res.json({ lastNumber });
+    }
+    catch (err) {
+        res.status(500).json({ error: err });
+    }
+};
+exports.getLastSkuNumber = getLastSkuNumber;
+const deleteProductImages = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { images } = req.body; // <-- array of image URLs to delete
+        console.log("images ==>> ", images);
+        if (!Array.isArray(images) || images.length === 0) {
+            return res.status(400).json({ message: "No images provided" });
+        }
+        const product = await product_model_1.default.findById(id);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+        console.log("id => ", id);
+        console.log("product => ", product);
+        // extract URLs to remove
+        const urlsToRemove = images.map((img) => img.url);
+        // ✅ FILTER OUT images whose url exists in req.body.images
+        product.images = product.images.filter((img) => !urlsToRemove.includes(img.url));
+        await product.save();
+        res.json({
+            message: "Images deleted successfully",
+            images: product.images,
+        });
+    }
+    catch (err) {
+        console.error("Delete product images error:", err);
+        res.status(500).json({ error: err });
+    }
+};
+exports.deleteProductImages = deleteProductImages;
+// export const deleteProduct = async (req: Request, res: Response) => {
+//   try {
+//     const product = await Product.findByIdAndDelete(req.params.id);
+//     if (!product) return res.status(404).json({ message: "Not found" });
+//     res.json(product);
+//   } catch (err) {
+//     res.status(500).json({ error: err });
+//   }
+// };
+//# sourceMappingURL=product.controller.js.map

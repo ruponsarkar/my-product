@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-// import Category from '../models/category.model';
-import Product, { IProduct } from "../models/product.model";
+import { getTenantModels } from "../services/tenant.service";
 
 export const allCategory = async (req: Request, res: Response) => {
   try {
+    const { Product } = await getTenantModels(req);
     const data = await Product.distinct("category");
     res.json(data);
   } catch (err) {
@@ -14,6 +14,7 @@ export const allCategory = async (req: Request, res: Response) => {
 export const allBrands = async (req: Request, res: Response) => {
   try {
     const { category } = req.params;
+    const { Product } = await getTenantModels(req);
 
     const data = await Product.distinct("brand", { category });
 

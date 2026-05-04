@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, Connection, Model } from "mongoose";
 
 const orderSchema = new Schema(
   {
@@ -106,5 +106,10 @@ const orderSchema = new Schema(
 
 //   next();
 // });
+
+export const getOrderModel = (conn: Connection, collectionName?: string): Model<any> => {
+  if (conn.models.Order) return conn.models.Order as Model<any>;
+  return conn.model("Order", orderSchema, collectionName);
+};
 
 export default model("Order", orderSchema);

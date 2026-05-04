@@ -4,7 +4,7 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.get('/', getAllForms);
+router.get('/', authMiddleware, getAllForms);
 router.post('/', authMiddleware, createForm);
 
 export default router;

@@ -10,7 +10,8 @@
     "start": "node dist/server.js",
     "test": "jest --runInBand",
     "lint": "eslint . --ext .ts",
-    "make:model": "ts-node ./scripts/generate-model.ts"
+    "make:model": "ts-node ./scripts/generate-model.ts",
+    "tenant:migrate": "ts-node ./scripts/migrate-tenant-collections.ts"
   },
   "keywords": [],
   "author": "",

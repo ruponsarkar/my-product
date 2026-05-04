@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Connection, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
@@ -6,15 +6,24 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  role: 'user'|'admin'|'seller';
+  role: string;
+  permissions?: string[];
+  isActive: boolean;
   comparePassword(candidate: string): Promise<boolean>;
 }
+
+export const getUserModel = (conn: Connection, collectionName?: string): Model<IUser> => {
+  if (conn.models.User) return conn.models.User as Model<IUser>;
+  return conn.model<IUser>('User', UserSchema, collectionName);
+};
 
 const UserSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
   password: { type: String, required: true },
-  role: { type: String, default: 'user' }
+  role: { type: String, default: 'operator' },
+  permissions: { type: [String], default: [] },
+  isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
 UserSchema.pre('save', async function(next) {

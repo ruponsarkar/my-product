@@ -80,3 +80,43 @@ ts-node-dev src/seeds/seedProducts.ts
 create model controller and routes:
 npm run make:model -- Form -c -r
 
+
+
+
+
+
+<!-- for server  -->
+pm2 start npm --name "new-backend" -- start
+
+npm run build
+pm2 restart new-backend
+
+
+
+<!-- mongo  -->
+use admin
+db.createUser({
+  user: "admin",
+  pwd: "StrongPasswordHere",
+  roles: [
+    { role: "userAdminAnyDatabase", db: "admin" },
+    { role: "readWriteAnyDatabase", db: "admin" }
+  ]
+})
+
+
+...   user: "appuser",
+...   pwd: "AppPassword123",
+...   roles: [ { role: "readWrite", db: "mydb" } ]
+
+
+
+to dump from server :
+mongodump \
+  --uri="mongodb://admin:StrongPasswordHere@localhost:27017/ecommerce?authSource=admin" \
+  --out ~/dump/ecommerce_$(date +%F_%H-%M)
+
+
+  info:
+  ~/data/db	✅ Your old data
+/opt/homebrew/var/mongodb	❌ Empty new DB

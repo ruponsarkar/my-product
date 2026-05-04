@@ -1,8 +1,7 @@
-import logo from "./logo.svg";
 import "./App.css";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/dashboard";
-import { Box, Toolbar } from "@mui/material";
+import { Box } from "@mui/material";
 // import Sidebar from "./components/dashboard/sidebar";
 import AllProducts from "./pages/product/allProducts";
 import AddFeelings from "./pages/feelings/feelings";
@@ -16,6 +15,15 @@ import Sell from "./pages/POS/sell";
 import Order from "./pages/POS/order";
 import Login from "./pages/login/login";
 import Analytics from "./pages/analytics";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Reports from "./pages/reports";
+import Users from "./pages/users";
+import Orders from "./pages/orders";
+import Settings from "./pages/settings";
+import Profile from "./pages/profile";
+
+const withProtection = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
+
 function App() {
   return (
     <div className="">
@@ -25,20 +33,25 @@ function App() {
           <Box component="main" sx={{ flexGrow: 1,  }}>
             {/* <Toolbar /> */}
             <Routes>
-              <Route path="/" element={<Sidebar> <Dashboard /> </Sidebar>} />
+              <Route path="/" element={withProtection(<Sidebar> <Dashboard /> </Sidebar>)} />
               <Route path="/login" element={<Login />} />
-              <Route path="/addProduct" element={<AddProduct />} />
-              <Route path="/updateProduct/:id" element={<AddProduct />} />
-              <Route path="/ViewProducts" element={<Sidebar>  <AllProducts /> </Sidebar>} />
-              <Route path="/product/:slug" element={<Sidebar>  <ProductDetails /> </Sidebar>} />
-              <Route path="/sell/:slug" element={<Sidebar>  <Sell /> </Sidebar>} />
-              <Route path="/order/:slug" element={<Sidebar>  <Order /> </Sidebar>} />
-              <Route path="/Analytics" element={<Sidebar>  <Analytics /> </Sidebar>} />
+              <Route path="/addProduct" element={withProtection(<Sidebar><AddProduct /></Sidebar>)} />
+              <Route path="/updateProduct/:id" element={withProtection(<Sidebar><AddProduct /></Sidebar>)} />
+              <Route path="/ViewProducts" element={withProtection(<Sidebar>  <AllProducts /> </Sidebar>)} />
+              <Route path="/product/:slug" element={withProtection(<Sidebar>  <ProductDetails /> </Sidebar>)} />
+              <Route path="/sell/:slug" element={withProtection(<Sidebar>  <Sell /> </Sidebar>)} />
+              <Route path="/order/:slug" element={withProtection(<Sidebar>  <Order /> </Sidebar>)} />
+              <Route path="/Analytics" element={withProtection(<Sidebar>  <Analytics /> </Sidebar>)} />
+              <Route path="/profile" element={withProtection(<Sidebar>  <Profile /> </Sidebar>)} />
+              <Route path="/orders" element={withProtection(<Sidebar>  <Orders /> </Sidebar>)} />
+              <Route path="/users" element={withProtection(<Sidebar>  <Users /> </Sidebar>)} />
+              <Route path="/settings" element={withProtection(<Sidebar>  <Settings /> </Sidebar>)} />
+              <Route path="/reports" element={withProtection(<Sidebar>  <Reports /> </Sidebar>)} />
 
 
-              <Route path="/feelings" element={<AddFeelings />} />
-              <Route path="/forms" element={<Sidebar> <Forms /> </Sidebar>} />
-              <Route path="/Test" element={<Test />} />
+              <Route path="/feelings" element={withProtection(<AddFeelings />)} />
+              <Route path="/forms" element={withProtection(<Sidebar> <Forms /> </Sidebar>)} />
+              <Route path="/Test" element={withProtection(<Test />)} />
             </Routes>
           </Box>
         </Box>

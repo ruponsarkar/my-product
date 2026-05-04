@@ -8,9 +8,9 @@ import Dynamic from "./add-forms/dynamic";
 export default function AddProduct() {
   return (
     <>
-      <Sidebar>
+      {/* <Sidebar> */}
         <AddProductForm />
-      </Sidebar>
+      {/* </Sidebar> */}
     </>
   );
 }

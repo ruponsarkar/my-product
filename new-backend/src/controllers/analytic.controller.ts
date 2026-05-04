@@ -1,11 +1,30 @@
 import { Request, Response } from "express";
-import Analytic from "../models/analytic.model";
-import Product from "../models/product.model";
-import Order from "../models/order.model";
+import { Types } from "mongoose";
+import { getTenantModels } from "../services/tenant.service";
 
-export const totalSalesSummary = async (req: Request, res: Response) => {
+const buildUserMatch = (req: Request & { user?: any }) => {
+  if (req.user?.role === "admin") {
+    return {};
+  }
+
+  const userId = req.user?.id || req.user?._id;
+  if (!userId || !Types.ObjectId.isValid(String(userId))) {
+    return { user: userId };
+  }
+
+  return { user: new Types.ObjectId(String(userId)) };
+};
+
+export const totalSalesSummary = async (req: Request & { user?: any }, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
+    console.log("OrderOrder", Order);
+    console.log("req ", req.user);
+    console.log("buildUserMatch ", buildUserMatch(req));
+    
+    
     const result = await Order.aggregate([
+      { $match: buildUserMatch(req) },
       {
         $group: {
           _id: null,
@@ -29,14 +48,17 @@ export const totalSalesSummary = async (req: Request, res: Response) => {
         totalTax: 0,
       }
     );
-  } catch {
+  } catch(e) {
+    console.log("error ", e);
+    
     res.status(500).json({ message: "Failed to fetch summary" });
   }
 };
 
 
-export const salesByDate = async (req: Request, res: Response) => {
+export const salesByDate = async (req: Request & { user?: any }, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const { type = "daily" } = req.query;
 
     let startDate: Date;
@@ -60,6 +82,7 @@ export const salesByDate = async (req: Request, res: Response) => {
     const data = await Order.aggregate([
       {
         $match: {
+          ...buildUserMatch(req),
           createdAt: {
             $gte: startDate,
             $lte: now,
@@ -94,9 +117,11 @@ export const salesByDate = async (req: Request, res: Response) => {
   }
 };
 
-export const paymentBreakdown = async (req: Request, res: Response) => {
+export const paymentBreakdown = async (req: Request & { user?: any }, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const data = await Order.aggregate([
+      { $match: buildUserMatch(req) },
       {
         $group: {
           _id: "$payment_type",
@@ -112,11 +137,13 @@ export const paymentBreakdown = async (req: Request, res: Response) => {
   }
 };
 
-export const topSellingProducts = async (req: Request, res: Response) => {
+export const topSellingProducts = async (req: Request & { user?: any }, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const limit = Number(req.query.limit) || 10;
 
     const data = await Order.aggregate([
+      { $match: buildUserMatch(req) },
       { $unwind: "$items" },
       {
         $group: {
@@ -148,9 +175,11 @@ export const topSellingProducts = async (req: Request, res: Response) => {
   }
 };
 
-export const netProfit = async (req: Request, res: Response) => {
+export const netProfit = async (req: Request & { user?: any }, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const data = await Order.aggregate([
+      { $match: buildUserMatch(req) },
       { $unwind: "$items" },
       {
         $lookup: {
@@ -204,8 +233,10 @@ export const netProfit = async (req: Request, res: Response) => {
   }
 };
 
-export const hourlySales = async (req: Request, res: Response) => {
+export const hourlySales = async (req: Request & { user?: any }, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
+
     // 📅 Start & end of today
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -216,6 +247,7 @@ export const hourlySales = async (req: Request, res: Response) => {
     const rawData = await Order.aggregate([
       {
         $match: {
+          ...buildUserMatch(req),
           createdAt: {
             $gte: startOfDay,
             $lte: endOfDay,
@@ -251,9 +283,11 @@ export const hourlySales = async (req: Request, res: Response) => {
   }
 };
 
-export const ordersByUser = async (req: Request, res: Response) => {
+export const ordersByUser = async (req: Request & { user?: any }, res: Response) => {
   try {
+    const { Order } = await getTenantModels(req);
     const data = await Order.aggregate([
+      { $match: buildUserMatch(req) },
       {
         $group: {
           _id: "$user",
@@ -278,7 +312,7 @@ export const ordersByUser = async (req: Request, res: Response) => {
   }
 };
 
-export const customReport = async (req: Request, res: Response) => {
+export const customReport = async (req: Request & { user?: any }, res: Response) => {
   // body structure should be
   // {
   //   "from": "2026-01-01",
@@ -288,9 +322,10 @@ export const customReport = async (req: Request, res: Response) => {
   // }
 
   try {
+    const { Order } = await getTenantModels(req);
     const { from, to, payment_type, status } = req.body;
 
-    const match: any = {};
+    const match: any = buildUserMatch(req);
 
     if (from && to) {
       match.createdAt = {
