@@ -26,7 +26,10 @@ export default function BasicInfoForm({ handleChange, form, editorContent, setEd
 
   const getAllBrands = async (cat) => {
     const res = await getBrands(cat);
-    setBrands(res.data);
+    const brandsWithDefault = res.data && res.data.length > 0 
+      ? ["NA", ...res.data] 
+      : ["NA"];
+    setBrands(brandsWithDefault);
   };
 
   const getCategory = async () => {
@@ -56,11 +59,11 @@ export default function BasicInfoForm({ handleChange, form, editorContent, setEd
       <h4>Basic Information</h4>
 
       <div className="mt-3">
-        <label htmlFor="">Product Name  </label>
+        <label htmlFor="">Product Name <span className="text-danger">*</span>  </label>
         <Input label="Product Name" name="name" onChange={handleChange} value={form.name} />
       </div>
       <div className="mt-3 col-md-3">
-        <label htmlFor="">Category</label>
+        <label htmlFor="">Category <span className="text-danger">*</span></label>
         {/* <Input label="Category" name="category" onChange={handleChange} value={form.category} /> */}
         <CreatableSelect
           label="Category"
@@ -74,7 +77,7 @@ export default function BasicInfoForm({ handleChange, form, editorContent, setEd
         />
       </div>
       <div className="mt-3 col-md-3">
-        <label htmlFor="">Brand</label>
+        <label htmlFor="">Brand <span className="text-danger">*</span> </label>
         {/* <Input label="Brand" name="brand" onChange={handleChange} value={form.brand} /> */}
         <CreatableSelect
           label="Brand"
@@ -89,12 +92,12 @@ export default function BasicInfoForm({ handleChange, form, editorContent, setEd
       </div>
       <div className="mt-3 col-md-3">
         <label htmlFor="">
-          SKU  <span onClick={handleOpen} className="border border-primary text-primary cursor-pointer rounded px-2">Generate</span>
+          SKU <span className="text-danger">*</span>  <span onClick={handleOpen} className="border border-primary text-primary cursor-pointer rounded px-2">Generate</span>
         </label>
         <Input label="SKU" name="sku" onChange={handleChange} value={form.sku} />
       </div>
       <div className="mt-3 col-md-3">
-        <label htmlFor="">Barcode</label>
+        <label htmlFor="">Barcode <span className="text-danger">*</span></label>
         <Input label="Barcode" name="barcode" onChange={handleChange} value={form.barcode} />
       </div>
 

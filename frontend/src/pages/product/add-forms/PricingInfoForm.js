@@ -7,14 +7,17 @@ export default function PricingInfoForm({handleChange, form}) {
       <h4>Pricing Information</h4>
 
       <div className="mt-3 col-md-3">
+        <label htmlFor="">MRP <span className="text-danger">*</span></label>
         <Input label="MRP" type="number" name="mrp" onChange={handleChange} value={form.mrp} />
       </div>
 
       <div className="mt-3 col-md-3">
+        <label htmlFor="">Selling Price <span className="text-danger">*</span> </label>
         <Input label="Selling Price" type="number" name="sellingPrice" onChange={handleChange} value={form.sellingPrice} />
       </div>
 
       <div className="mt-3 col-md-3">
+        <label htmlFor="">Cost Price</label>
         <Input label="Cost Price" type="number" name="costPrice" onChange={handleChange} value={form.costPrice} />
       </div>
       

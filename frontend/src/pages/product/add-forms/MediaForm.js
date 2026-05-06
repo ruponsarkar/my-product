@@ -43,31 +43,47 @@ export default function MediaForm({
     <div className="border p-3 rounded">
       <h4>Media</h4>
 
-      {/* Upload */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        // capture="environment"        // ✅ camera support
-        multiple
-        onChange={handleImageUpload}
-      />
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"        // ✅ camera support
-        multiple
-        onChange={handleImageUpload}
-      />
+      <div className="row g-3 mt-3">
+        <div className="col-md-6">
+          <label htmlFor="image-upload" className="d-flex align-items-center gap-2 mb-2 btn btn-outline-secondary w-100 justify-content-center py-3">
+            <span className="fs-4">📁</span>
+            <span>Upload Images</span>
+          </label>
+          <input
+            id="image-upload"
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageUpload}
+            className="visually-hidden"
+          />
+        </div>
+
+        <div className="col-md-6">
+          <label htmlFor="image-capture" className="d-flex align-items-center gap-2 mb-2 btn btn-outline-secondary w-100 justify-content-center py-3">
+            <span className="fs-4">📸</span>
+            <span>Capture Images</span>
+          </label>
+          <input
+            id="image-capture"
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            onChange={handleImageUpload}
+            className="visually-hidden"
+          />
+        </div>
+      </div>
 
       {/* EXISTING IMAGES */}
-      <h6 className="mt-3">Existing Images</h6>
+      <h6 className="mt-4">Existing Images</h6>
       <div className="d-flex gap-2 flex-wrap">
         {existingImages.map((img) => (
-          <div key={img} className="border p-2">
-            {/* {img.url} */}
-            <img src={`${process.env.REACT_APP_BACKEND}${img.url}`} width="150" />
+          <div key={img} className="border rounded p-2 text-center" style={{ width: 160 }}>
+            <img src={`${process.env.REACT_APP_BACKEND}${img.url}`} width="150" className="mb-2 rounded" />
             <button
               className="btn btn-sm btn-danger"
               onClick={() => removeImage(img, true)}
@@ -79,11 +95,11 @@ export default function MediaForm({
       </div>
 
       {/* NEW IMAGES */}
-      <h6 className="mt-3">New Images</h6>
+      <h6 className="mt-4">New Images</h6>
       <div className="d-flex gap-2 flex-wrap">
         {newImages.map((img) => (
-          <div key={img.id} className="border p-2">
-            <img src={img.url} width="150" />
+          <div key={img.id} className="border rounded p-2 text-center" style={{ width: 160 }}>
+            <img src={img.url} width="150" className="mb-2 rounded" />
             <button
               className="btn btn-sm btn-danger"
               onClick={() => removeImage(img, false)}

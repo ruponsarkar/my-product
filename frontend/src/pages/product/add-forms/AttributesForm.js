@@ -10,8 +10,8 @@ import Modal from "../../../components/modal/modal";
 export default function AttributesForm({ handleChange, form, onSave }) {
   const [inputNames, setInputNames] = useState([
     { name: "weight", label: "Weight" },
-    { name: "dimensions", label: "Dimensions (L x W x H)" },
-    { name: "color", label: "Color" },
+    // { name: "dimensions", label: "Dimensions (L x W x H)" },
+    // { name: "color", label: "Color" },
     { name: "material", label: "Material" },
     { name: "size", label: "Size" }
   ]);
