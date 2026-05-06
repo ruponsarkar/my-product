@@ -27,8 +27,8 @@ export default function BasicInfoForm({ handleChange, form, editorContent, setEd
   const getAllBrands = async (cat) => {
     const res = await getBrands(cat);
     const brandsWithDefault = res.data && res.data.length > 0 
-      ? ["N/A", ...res.data] 
-      : ["N/A"];
+      ? ["NA", ...res.data] 
+      : ["NA"];
     setBrands(brandsWithDefault);
   };
 
