@@ -9,11 +9,11 @@ export default function StockInfoForm({handleChange, form}) {
       <h4>Stock Information</h4>
 
       <div className="mt-3 col-md-3">
-        <label htmlFor="">Stock Quantity</label>
+        <label htmlFor="">Stock Quantity <span className="text-danger">*</span></label>
         <Input label="Quantity in Stock" type="number" name="stockQty" onChange={handleChange} value={form.stockQty}/>
       </div>
       <div className="mt-3 col-md-3">
-        <label htmlFor="">  Warning if stock quantity is less than this </label>
+        <label htmlFor="">  Warning if stock quantity is less than this <span className="text-danger">*</span></label>
         <Input label="Reorder Level" type="number" name="reorderLevel" onChange={handleChange} value={form.reorderLevel}/>
       </div>
       <div className="mt-3 col-md-3">

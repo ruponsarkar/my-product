@@ -83,7 +83,7 @@ const orderSchema = new Schema(
     // Order lifecycle
     status: {
       type: String,
-      enum: ["ordered", "paid", "cancelled", "completed", "credit", "cash"],
+      enum: ["ordered", "paid", "cancelled", "completed", "credit", "cash", "online"],
       default: "ordered",
     },
   },

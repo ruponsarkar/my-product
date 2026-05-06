@@ -8,6 +8,8 @@ const initialState = {
     // name: '',
     // quantity: 0,
     // // Add more fields as needed
+    stockQty: 100,
+    reorderLevel: 20
   }
 };
 
