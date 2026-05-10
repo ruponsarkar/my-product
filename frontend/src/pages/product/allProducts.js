@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DynamicProductTable from "../../components/table/table";
-import { getProducts } from "../../api/services/product/productApi";
+import { getProducts, updateProduct } from "../../api/services/product/productApi";
 import { useNavigate } from 'react-router-dom';
 import Modal from "../../components/modal/modal";
 import BarcodePreview from "../../components/barcode/";
@@ -22,6 +22,8 @@ export default function AllProducts() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [barcode, setBarcode] = useState();
+  const [featuredFilter, setFeaturedFilter] = useState("");
+  const [updatingFeaturedId, setUpdatingFeaturedId] = useState(null);
 
   const [open, setOpen] = useState(false);
   const formatCurrency = (value) =>
@@ -41,7 +43,7 @@ export default function AllProducts() {
 
   useEffect(() => {
     getData();
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, featuredFilter]);
 
   const getData = async () => {
     const response = await getProducts({
@@ -50,6 +52,7 @@ export default function AllProducts() {
       search: "",
       sortBy: "createdAt",
       sortOrder: "desc",
+      isFeatured: featuredFilter,
     });
     console.log("response", response.data);
 
@@ -57,6 +60,18 @@ export default function AllProducts() {
     setTotal(response.data.total);
     setPage(response.data.page);
     // setRowsPerPage(response.data.limit);
+  };
+
+  const handleFeaturedToggle = async (row) => {
+    try {
+      setUpdatingFeaturedId(row._id);
+      await updateProduct(row._id, { isFeatured: !row.isFeatured });
+      await getData();
+    } catch (error) {
+      console.log("error updating isFeatured", error);
+    } finally {
+      setUpdatingFeaturedId(null);
+    }
   };
 
   const handleView=(row)=>{
@@ -78,6 +93,26 @@ export default function AllProducts() {
         {v ?? 0}
       </span>
     ) },
+    {
+      key: "isFeatured",
+      label: "Featured",
+      width: 170,
+      sortable: false,
+      format: (value, row) => (
+        <button
+          type="button"
+          onClick={() => handleFeaturedToggle(row)}
+          disabled={updatingFeaturedId === row._id}
+          className={`inline-flex min-w-[88px] items-center justify-center rounded-full px-3 py-1 text-xs font-semibold transition ${
+            value
+              ? "bg-green-200 text-green-800 hover:bg-green-300"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          } ${updatingFeaturedId === row._id ? "cursor-not-allowed opacity-60" : ""}`}
+        >
+          {updatingFeaturedId === row._id ? "Updating..." : value ? "Featured" : "Not Featured"}
+        </button>
+      ),
+    },
     { key: "createdAt", label: "Created", width: 108, sortable: true, format: (v) => new Date(v).toLocaleDateString() },
   ];
 
@@ -137,13 +172,28 @@ export default function AllProducts() {
           <h1 className="text-2xl font-bold text-slate-950">Product Inventory</h1>
           <p className="text-sm text-slate-500 mt-1">Review stock, pricing, barcodes, and product actions.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate("/addProduct")}
-          className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
-        >
-          Add Product
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <select
+            value={featuredFilter}
+            onChange={(e) => {
+              setPage(1);
+              setFeaturedFilter(e.target.value);
+            }}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+          >
+            <option value="">All Products</option>
+            <option value="true">Featured Only</option>
+            <option value="false">Not Featured</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() => navigate("/addProduct")}
+            className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+          >
+            Add Product
+          </button>
+        </div>
       </div>
 
       <DynamicProductTable

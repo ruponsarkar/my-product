@@ -185,6 +185,11 @@ export const getProducts = async (req: Request, res: Response) => {
       filter.category = String(req.query.category);
     }
 
+    if (typeof req.query.isFeatured === "string") {
+      if (req.query.isFeatured === "true") filter.isFeatured = true;
+      if (req.query.isFeatured === "false") filter.isFeatured = false;
+    }
+
     // run queries (split to avoid type inference issues in Promise.all)
     const Product = await getTenantProductModel(req);
 
