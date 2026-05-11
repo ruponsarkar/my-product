@@ -10,6 +10,7 @@ router.post("/", auth_middleware_1.authMiddleware, product_controller_1.saveProd
 router.get("/:id", auth_middleware_1.authMiddleware, product_controller_1.getProductByIdOrSlug);
 router.get("/code/:code", auth_middleware_1.authMiddleware, product_controller_1.getProductBarcodeOrSku);
 router.put("/:id", auth_middleware_1.authMiddleware, product_controller_1.updateProduct);
+router.delete("/:id", auth_middleware_1.authMiddleware, product_controller_1.deleteProduct);
 router.get("/getLastSkuNumber/:prefix", auth_middleware_1.authMiddleware, product_controller_1.getLastSkuNumber);
 // router.post("/:id/image", uploadMany.array("images", 10), addProductImages);
 router.post("/deleteProductImages/:id", auth_middleware_1.authMiddleware, product_controller_1.deleteProductImages);

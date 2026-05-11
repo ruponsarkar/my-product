@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DynamicProductTable from "../../components/table/table";
-import { getProducts, updateProduct } from "../../api/services/product/productApi";
+import { deleteProduct, getProducts, updateProduct } from "../../api/services/product/productApi";
 import { useNavigate } from 'react-router-dom';
 import Modal from "../../components/modal/modal";
 import BarcodePreview from "../../components/barcode/";
@@ -24,6 +24,7 @@ export default function AllProducts() {
   const [barcode, setBarcode] = useState();
   const [featuredFilter, setFeaturedFilter] = useState("");
   const [updatingFeaturedId, setUpdatingFeaturedId] = useState(null);
+  const [deletingProductId, setDeletingProductId] = useState(null);
 
   const [open, setOpen] = useState(false);
   const formatCurrency = (value) =>
@@ -78,6 +79,66 @@ export default function AllProducts() {
       navigate(`/product/${row.slug}`);
   }
 
+  const handleDelete = async (row) => {
+    if (deletingProductId) return;
+
+    const shouldDelete = window.confirm(
+      `Delete "${row.name}"?\n\nThis action cannot be undone.`
+    );
+
+    if (!shouldDelete) return;
+
+    try {
+      setDeletingProductId(row._id);
+      await deleteProduct(row._id);
+
+      const isLastItemOnPage = Number(products?.length || 0) === 1;
+      const nextPage = isLastItemOnPage && page > 1 ? page - 1 : page;
+
+      if (nextPage !== page) {
+        setPage(nextPage);
+        return;
+      }
+
+      await getData();
+    } catch (error) {
+      console.log("error deleting product", error);
+      window.alert("Unable to delete this product right now. Please try again.");
+    } finally {
+      setDeletingProductId(null);
+    }
+  };
+
+  const EyeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+
+  const ReceiptIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 14l2 2 4-4" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4h10a2 2 0 012 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 012-2z" />
+    </svg>
+  );
+
+  const PencilIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+
+  const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 7h12" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7V4h6v3" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7l1 13h6l1-13" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 11v6M14 11v6" />
+    </svg>
+  );
+
   const defaultColumns = [
     { key: "sku", label: "SKU", width: 96, sortable: true , format: (v) => 
     { return <span className="cursor-pointer" onClick={() => {handleOpen(); setBarcode(v);}}>{v}</span>} },
@@ -121,38 +182,29 @@ export default function AllProducts() {
     {
       key: "view",
       label: "View",
-      icon: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>
-      ),
+      icon: EyeIcon,
       onClick: (row) => handleView(row),
       showIf: () => true,
     },
     {
       key: "sell",
       label: "Sell",
-      icon: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>
-      ),
+      icon: ReceiptIcon,
       onClick: (row) => navigate(`/sell/${row.slug}`),
       showIf: () => true,
     },
     {
       key: "edit",
       label: "Edit",
-      // icon: () => (
-      //   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      //     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5h6M4 7v12a2 2 0 002 2h12" />
-      //   </svg>
-      // ),
-      // onClick: (row) => alert(`Edit ${row._id}`),
-      // onClick: (row) => handleEdit(row),
+      icon: PencilIcon,
       onClick: (row) => handleEdit(row),
+      showIf: () => true,
+    },
+    {
+      key: "delete",
+      label: "Delete",
+      icon: TrashIcon,
+      onClick: (row) => handleDelete(row),
       showIf: () => true,
     },
   ];

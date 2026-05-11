@@ -9,6 +9,10 @@ import fs from "fs";
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 const PUBLIC_PREFIX = "/uploads";
 const publicPath = (filename: string) => `${PUBLIC_PREFIX}/${filename}`;
+const fileFromPublicUrl = (url?: string) =>
+  String(url || "")
+    .replace(PUBLIC_PREFIX, "")
+    .replace(/^\/+/, "");
 
 const removeFile = (filename: string) => {
   try {
@@ -308,6 +312,32 @@ export const updateProduct = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteProduct = async (req: Request, res: Response) => {
+  try {
+    const Product = await getTenantProductModel(req);
+    const product: any = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    for (const image of product.images || []) {
+      const filename = fileFromPublicUrl(image?.url);
+      if (filename) removeFile(filename);
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
+
+    return res.json({
+      message: "Product deleted successfully",
+      product,
+    });
+  } catch (err) {
+    console.error("deleteProduct error:", err);
+    return res.status(500).json({ error: err });
+  }
+};
+
 export const getLastSkuNumber = async (req: Request, res: Response) => {
   try {
     const Product = await getTenantProductModel(req);
@@ -372,13 +402,3 @@ export const deleteProductImages = async (req: Request, res: Response) => {
     res.status(500).json({ error: err });
   }
 };
-
-// export const deleteProduct = async (req: Request, res: Response) => {
-//   try {
-//     const product = await Product.findByIdAndDelete(req.params.id);
-//     if (!product) return res.status(404).json({ message: "Not found" });
-//     res.json(product);
-//   } catch (err) {
-//     res.status(500).json({ error: err });
-//   }
-// };

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteProductImages = exports.getLastSkuNumber = exports.updateProduct = exports.saveProduct = exports.getProductBarcodeOrSku = exports.getProductByIdOrSlug = exports.getProducts = exports.addProductImages = void 0;
+exports.deleteProductImages = exports.getLastSkuNumber = exports.deleteProduct = exports.updateProduct = exports.saveProduct = exports.getProductBarcodeOrSku = exports.getProductByIdOrSlug = exports.getProducts = exports.addProductImages = void 0;
 const slugify_1 = __importDefault(require("slugify"));
 const tenant_service_1 = require("../services/tenant.service");
 const path_1 = __importDefault(require("path"));
@@ -11,6 +11,9 @@ const fs_1 = __importDefault(require("fs"));
 const UPLOADS_DIR = path_1.default.join(process.cwd(), "uploads");
 const PUBLIC_PREFIX = "/uploads";
 const publicPath = (filename) => `${PUBLIC_PREFIX}/${filename}`;
+const fileFromPublicUrl = (url) => String(url || "")
+    .replace(PUBLIC_PREFIX, "")
+    .replace(/^\/+/, "");
 const removeFile = (filename) => {
     try {
         const fp = path_1.default.join(UPLOADS_DIR, filename);
@@ -271,6 +274,30 @@ const updateProduct = async (req, res) => {
     }
 };
 exports.updateProduct = updateProduct;
+const deleteProduct = async (req, res) => {
+    try {
+        const Product = await getTenantProductModel(req);
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+        for (const image of product.images || []) {
+            const filename = fileFromPublicUrl(image?.url);
+            if (filename)
+                removeFile(filename);
+        }
+        await Product.findByIdAndDelete(req.params.id);
+        return res.json({
+            message: "Product deleted successfully",
+            product,
+        });
+    }
+    catch (err) {
+        console.error("deleteProduct error:", err);
+        return res.status(500).json({ error: err });
+    }
+};
+exports.deleteProduct = deleteProduct;
 const getLastSkuNumber = async (req, res) => {
     try {
         const Product = await getTenantProductModel(req);
@@ -322,13 +349,4 @@ const deleteProductImages = async (req, res) => {
     }
 };
 exports.deleteProductImages = deleteProductImages;
-// export const deleteProduct = async (req: Request, res: Response) => {
-//   try {
-//     const product = await Product.findByIdAndDelete(req.params.id);
-//     if (!product) return res.status(404).json({ message: "Not found" });
-//     res.json(product);
-//   } catch (err) {
-//     res.status(500).json({ error: err });
-//   }
-// };
 //# sourceMappingURL=product.controller.js.map

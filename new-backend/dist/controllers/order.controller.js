@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMyOrders = exports.getOrders = exports.createOrder = void 0;
+exports.getMyOrders = exports.getOrderById = exports.getOrders = exports.createOrder = void 0;
 const tenant_service_1 = require("../services/tenant.service");
 // helper to generate ORDER ID like ORD0001
 const generateOrderId = async (Order) => {
@@ -132,6 +132,30 @@ const getOrders = async (req, res) => {
     }
 };
 exports.getOrders = getOrders;
+const getOrderById = async (req, res) => {
+    try {
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
+        const { id } = req.params;
+        const isAdmin = req.user?.role === "admin";
+        const query = { _id: id };
+        if (!isAdmin) {
+            query.user = req.user.id;
+        }
+        const order = await Order.findOne(query)
+            .populate("user", "name email role")
+            .populate("client", "name mobile email addressLine1 addressLine2 city notes")
+            .populate("items.product", "name sku barcode sellingPrice mrp");
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+        return res.json(order);
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to fetch order details" });
+    }
+};
+exports.getOrderById = getOrderById;
 const getMyOrders = async (req, res) => {
     try {
         const { Order } = await (0, tenant_service_1.getTenantModels)(req);

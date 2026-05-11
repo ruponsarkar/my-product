@@ -4,6 +4,7 @@ import {
   getProductByIdOrSlug,
   saveProduct,
   updateProduct,
+  deleteProduct,
   addProductImages,
   getProductBarcodeOrSku,
   getLastSkuNumber,
@@ -20,6 +21,7 @@ router.post("/", authMiddleware, saveProduct);
 router.get("/:id", authMiddleware, getProductByIdOrSlug);
 router.get("/code/:code", authMiddleware, getProductBarcodeOrSku);
 router.put("/:id", authMiddleware, updateProduct);
+router.delete("/:id", authMiddleware, deleteProduct);
 router.get("/getLastSkuNumber/:prefix", authMiddleware, getLastSkuNumber);
 
 // router.post("/:id/image", uploadMany.array("images", 10), addProductImages);
