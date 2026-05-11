@@ -1,4 +1,9 @@
+import CartCheckoutForm from "@/components/CartCheckoutForm";
+
 export default function CheckoutPage() {
-    return <div>Checkout coming soon...</div>;
-  }
-  
+  return (
+    <div className="menu-shell">
+      <CartCheckoutForm />
+    </div>
+  );
+}

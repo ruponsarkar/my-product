@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getProductModel = void 0;
 const mongoose_1 = require("mongoose");
 const ImageSchema = new mongoose_1.Schema({
     url: { type: String, required: false },
@@ -68,5 +69,11 @@ const ProductSchema = new mongoose_1.Schema({
     ratingsCount: { type: Number, default: 0 },
 }, { timestamps: true });
 ProductSchema.index({ name: "text", description: "text" });
+const getProductModel = (conn, collectionName) => {
+    if (conn.models.Product)
+        return conn.models.Product;
+    return conn.model("Product", ProductSchema, collectionName);
+};
+exports.getProductModel = getProductModel;
 exports.default = (0, mongoose_1.model)("Product", ProductSchema);
 //# sourceMappingURL=product.model.js.map

@@ -1,4 +1,4 @@
-import { Schema, Document } from "mongoose";
+import { Schema, Document, Connection, Model } from "mongoose";
 export interface IProduct extends Document {
     name: string;
     description?: string;
@@ -35,14 +35,15 @@ export interface IProduct extends Document {
     createdAt?: Date;
     updatedAt?: Date;
 }
-declare const _default: import("mongoose").Model<{
+export declare const getProductModel: (conn: Connection, collectionName?: string) => Model<IProduct>;
+declare const _default: Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     name: string;
+    slug: string;
     isActive: boolean;
     attributes: any;
-    slug: string;
     stockQty: number;
     isFeatured: boolean;
     images: import("mongoose").Types.DocumentArray<{
@@ -80,9 +81,9 @@ declare const _default: import("mongoose").Model<{
     updatedAt: NativeDate;
 } & {
     name: string;
+    slug: string;
     isActive: boolean;
     attributes: any;
-    slug: string;
     stockQty: number;
     isFeatured: boolean;
     images: import("mongoose").Types.DocumentArray<{
@@ -122,9 +123,9 @@ declare const _default: import("mongoose").Model<{
     updatedAt: NativeDate;
 } & {
     name: string;
+    slug: string;
     isActive: boolean;
     attributes: any;
-    slug: string;
     stockQty: number;
     isFeatured: boolean;
     images: import("mongoose").Types.DocumentArray<{
@@ -161,16 +162,16 @@ declare const _default: import("mongoose").Model<{
     _id: import("mongoose").Types.ObjectId;
 } & {
     __v: number;
-}, Schema<any, import("mongoose").Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
+}, Schema<any, Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
     timestamps: true;
 }, {
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     name: string;
+    slug: string;
     isActive: boolean;
     attributes: any;
-    slug: string;
     stockQty: number;
     isFeatured: boolean;
     images: import("mongoose").Types.DocumentArray<{
@@ -208,9 +209,9 @@ declare const _default: import("mongoose").Model<{
     updatedAt: NativeDate;
 } & {
     name: string;
+    slug: string;
     isActive: boolean;
     attributes: any;
-    slug: string;
     stockQty: number;
     isFeatured: boolean;
     images: import("mongoose").Types.DocumentArray<{
@@ -250,9 +251,9 @@ declare const _default: import("mongoose").Model<{
     updatedAt: NativeDate;
 } & {
     name: string;
+    slug: string;
     isActive: boolean;
     attributes: any;
-    slug: string;
     stockQty: number;
     isFeatured: boolean;
     images: import("mongoose").Types.DocumentArray<{

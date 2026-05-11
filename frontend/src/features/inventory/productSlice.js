@@ -9,7 +9,8 @@ const initialState = {
     // quantity: 0,
     // // Add more fields as needed
     stockQty: 100,
-    reorderLevel: 20
+    reorderLevel: 20,
+    isFeatured: true,
   }
 };
 

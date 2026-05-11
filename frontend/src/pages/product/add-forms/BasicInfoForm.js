@@ -113,6 +113,12 @@ export default function BasicInfoForm({ handleChange, form, editorContent, setEd
         />
       </div>
 
+       <div className="mt-3">
+        <label>
+          <input type="checkbox" name="isFeatured" onChange={handleChange} checked={form.isFeatured} value={form.isFeatured}/> Featured
+        </label>
+      </div>
+
 
       <Modal
         open={open}

@@ -22,6 +22,7 @@ export const createOrder = async (
       credit,
       payment_type,
       customer_phone,
+      order_from,
     } = req.body;
 
     // basic validation
@@ -41,6 +42,7 @@ export const createOrder = async (
       user: req.user.id,
       order_id,
       customer_phone: customer_phone || null,
+      order_from: order_from || "POS",
       payment_type,
       items: items.map((item: any) => ({
         product: item.product,
@@ -139,6 +141,7 @@ export const getOrders = async (
     const total = await Order.countDocuments(query);
     const orders = await Order.find(query)
       .populate("user", "name email role")
+      .populate("client", "name mobile email addressLine1 addressLine2 city")
       .populate("items.product", "name price")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -154,6 +157,36 @@ export const getOrders = async (
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch orders" });
+  }
+};
+
+export const getOrderById = async (
+  req: Request & { user?: any },
+  res: Response
+) => {
+  try {
+    const { Order } = await getTenantModels(req);
+    const { id } = req.params;
+    const isAdmin = req.user?.role === "admin";
+
+    const query: any = { _id: id };
+    if (!isAdmin) {
+      query.user = req.user.id;
+    }
+
+    const order = await Order.findOne(query)
+      .populate("user", "name email role")
+      .populate("client", "name mobile email addressLine1 addressLine2 city notes")
+      .populate("items.product", "name sku barcode sellingPrice mrp");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    return res.json(order);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to fetch order details" });
   }
 };
 
@@ -174,6 +207,7 @@ export const getMyOrders = async (
     const orders = await Order.find(query)
       .populate("items.product")
       .populate("user", "name email role")
+      .populate("client", "name mobile email addressLine1 addressLine2 city")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSize);

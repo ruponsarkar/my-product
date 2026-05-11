@@ -1,12 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getOrderModel = void 0;
 const mongoose_1 = require("mongoose");
 const orderSchema = new mongoose_1.Schema({
     // Who placed the order
     user: {
         type: mongoose_1.Types.ObjectId,
         ref: "User",
-        required: true,
+        default: null,
+    },
+    client: {
+        type: mongoose_1.Types.ObjectId,
+        ref: "Client",
+        default: null,
     },
     // Unique readable order id (ORD123)
     order_id: {
@@ -19,11 +25,33 @@ const orderSchema = new mongoose_1.Schema({
         type: String,
         default: null,
     },
+    customer_name: {
+        type: String,
+        default: null,
+    },
+    customer_email: {
+        type: String,
+        default: null,
+    },
+    delivery_address: {
+        addressLine1: { type: String, default: null },
+        addressLine2: { type: String, default: null },
+        city: { type: String, default: null },
+    },
+    customer_note: {
+        type: String,
+        default: null,
+    },
     // Payment method
     payment_type: {
         type: String,
         enum: ["cash", "online", "credit"],
         required: true,
+    },
+    order_from: {
+        type: String,
+        enum: ["POS", "WEB", "APP"],
+        default: "POS",
     },
     // Ordered items
     items: [
@@ -75,7 +103,7 @@ const orderSchema = new mongoose_1.Schema({
     // Order lifecycle
     status: {
         type: String,
-        enum: ["ordered", "paid", "cancelled", "completed", "credit", "cash"],
+        enum: ["ordered", "paid", "cancelled", "completed", "credit", "cash", "online"],
         default: "ordered",
     },
 }, {
@@ -93,5 +121,11 @@ const orderSchema = new mongoose_1.Schema({
 //   }
 //   next();
 // });
+const getOrderModel = (conn, collectionName) => {
+    if (conn.models.Order)
+        return conn.models.Order;
+    return conn.model("Order", orderSchema, collectionName);
+};
+exports.getOrderModel = getOrderModel;
 exports.default = (0, mongoose_1.model)("Order", orderSchema);
 //# sourceMappingURL=order.model.js.map

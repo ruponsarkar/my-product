@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Connection, Model } from "mongoose";
 export interface IFormAttributes extends Document {
     name: string;
     label: string;
@@ -20,7 +20,8 @@ export interface IFormAttributes extends Document {
     createdAt?: Date;
     updatedAt?: Date;
 }
-declare const _default: import("mongoose").Model<IFormAttributes, {}, {}, {}, Document<unknown, {}, IFormAttributes, {}, {}> & IFormAttributes & Required<{
+export declare const getFormAttributesModel: (conn: Connection, collectionName?: string) => Model<IFormAttributes>;
+declare const _default: Model<IFormAttributes, {}, {}, {}, Document<unknown, {}, IFormAttributes, {}, {}> & IFormAttributes & Required<{
     _id: unknown;
 }> & {
     __v: number;

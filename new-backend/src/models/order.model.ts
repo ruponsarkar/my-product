@@ -6,7 +6,13 @@ const orderSchema = new Schema(
     user: {
       type: Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
+    },
+
+    client: {
+      type: Types.ObjectId,
+      ref: "Client",
+      default: null,
     },
 
     // Unique readable order id (ORD123)
@@ -21,12 +27,35 @@ const orderSchema = new Schema(
       type: String,
       default: null,
     },
+    customer_name: {
+      type: String,
+      default: null,
+    },
+    customer_email: {
+      type: String,
+      default: null,
+    },
+    delivery_address: {
+      addressLine1: { type: String, default: null },
+      addressLine2: { type: String, default: null },
+      city: { type: String, default: null },
+    },
+    customer_note: {
+      type: String,
+      default: null,
+    },
 
     // Payment method
     payment_type: {
       type: String,
       enum: ["cash", "online", "credit"],
       required: true,
+    },
+
+    order_from: {
+      type: String,
+      enum: ["POS", "WEB", "APP"],
+      default: "POS",
     },
 
     // Ordered items

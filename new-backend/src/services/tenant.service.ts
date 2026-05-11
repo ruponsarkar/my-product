@@ -4,6 +4,7 @@ import { getTenantConnection, findTenant, resolveTenant } from '../config/tenant
 import { getUserModel } from '../models/user.model';
 import { getProductModel } from '../models/product.model';
 import { getOrderModel } from '../models/order.model';
+import { getClientModel } from '../models/client.model';
 import { getFormModel } from '../models/form.model';
 import { getFormAttributesModel } from '../models/form_attritubes.model';
 import { getAnalyticModel } from '../models/analytic.model';
@@ -14,6 +15,7 @@ export const tenantModelFactories: TenantModelFactory[] = [
   getUserModel,
   getProductModel,
   getOrderModel,
+  getClientModel,
   getFormModel,
   getFormAttributesModel,
   getAnalyticModel,
@@ -23,6 +25,7 @@ export interface TenantModels {
   User: Model<any>;
   Product: Model<any>;
   Order: Model<any>;
+  Client: Model<any>;
   Form: Model<any>;
   FormAttributes: Model<any>;
   Analytic: Model<any>;
@@ -70,6 +73,7 @@ export const getTenantModels = async (req: Request & { user?: any }): Promise<Te
     User: getUserModel(conn),
     Product: getProductModel(conn),
     Order: getOrderModel(conn),
+    Client: getClientModel(conn),
     Form: getFormModel(conn),
     FormAttributes: getFormAttributesModel(conn),
     Analytic: getAnalyticModel(conn),
@@ -79,4 +83,25 @@ export const getTenantModels = async (req: Request & { user?: any }): Promise<Te
 export const lookupTenant = async (tenantSlug?: string) => {
   if (!tenantSlug) return null;
   return findTenant({ tenantSlug });
+};
+
+export const getTenantModelsBySlug = async (tenantSlug?: string): Promise<TenantModels> => {
+  const tenant = tenantSlug
+    ? await resolveTenant({ tenantSlug })
+    : await resolveTenant({});
+  if (!tenant) {
+    throw new Error("Tenant not found");
+  }
+
+  const conn = getTenantConnection(tenant);
+
+  return {
+    User: getUserModel(conn),
+    Product: getProductModel(conn),
+    Order: getOrderModel(conn),
+    Client: getClientModel(conn),
+    Form: getFormModel(conn),
+    FormAttributes: getFormAttributesModel(conn),
+    Analytic: getAnalyticModel(conn),
+  };
 };

@@ -1,13 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProfile = void 0;
-const user_model_1 = __importDefault(require("../models/user.model"));
+exports.updateUser = exports.createUser = exports.listUsers = exports.getProfile = void 0;
+const tenant_service_1 = require("../services/tenant.service");
 const getProfile = async (req, res) => {
     try {
-        const user = await user_model_1.default.findById(req.user.id).select("-password");
+        const { User } = await (0, tenant_service_1.getTenantModels)(req);
+        const user = await User.findById(req.user.id).select("-password");
         res.json(user);
     }
     catch (err) {
@@ -15,4 +13,85 @@ const getProfile = async (req, res) => {
     }
 };
 exports.getProfile = getProfile;
+const listUsers = async (req, res) => {
+    try {
+        const { User } = await (0, tenant_service_1.getTenantModels)(req);
+        const users = await User.find().select("-password");
+        res.json(users);
+    }
+    catch (err) {
+        res.status(500).json({ error: err });
+    }
+};
+exports.listUsers = listUsers;
+const createUser = async (req, res) => {
+    try {
+        const { name, email, password, role, permissions } = req.body;
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: "Name, email and password are required" });
+        }
+        const { User } = await (0, tenant_service_1.getTenantModels)(req);
+        const existing = await User.findOne({ email });
+        if (existing) {
+            return res.status(400).json({ message: "User already exists" });
+        }
+        const user = new User({
+            name,
+            email,
+            password,
+            role: role || "operator",
+            permissions: Array.isArray(permissions) ? permissions : [],
+            isActive: true,
+        });
+        await user.save();
+        res.status(201).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            permissions: user.permissions,
+            isActive: user.isActive,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: err });
+    }
+};
+exports.createUser = createUser;
+const updateUser = async (req, res) => {
+    try {
+        const { name, role, permissions, isActive } = req.body;
+        const userId = req.params.id;
+        const { User } = await (0, tenant_service_1.getTenantModels)(req);
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (name)
+            user.name = name;
+        if (role)
+            user.role = role;
+        if (typeof isActive === "boolean")
+            user.isActive = isActive;
+        if (permissions)
+            user.permissions = Array.isArray(permissions) ? permissions : user.permissions;
+        await user.save();
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            permissions: user.permissions,
+            isActive: user.isActive,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: err });
+    }
+};
+exports.updateUser = updateUser;
 //# sourceMappingURL=user.controller.js.map
