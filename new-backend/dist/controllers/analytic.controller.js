@@ -1,13 +1,26 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.customReport = exports.ordersByUser = exports.hourlySales = exports.netProfit = exports.topSellingProducts = exports.paymentBreakdown = exports.salesByDate = exports.totalSalesSummary = void 0;
-const order_model_1 = __importDefault(require("../models/order.model"));
+const mongoose_1 = require("mongoose");
+const tenant_service_1 = require("../services/tenant.service");
+const buildUserMatch = (req) => {
+    if (req.user?.role === "admin") {
+        return {};
+    }
+    const userId = req.user?.id || req.user?._id;
+    if (!userId || !mongoose_1.Types.ObjectId.isValid(String(userId))) {
+        return { user: userId };
+    }
+    return { user: new mongoose_1.Types.ObjectId(String(userId)) };
+};
 const totalSalesSummary = async (req, res) => {
     try {
-        const result = await order_model_1.default.aggregate([
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
+        console.log("OrderOrder", Order);
+        console.log("req ", req.user);
+        console.log("buildUserMatch ", buildUserMatch(req));
+        const result = await Order.aggregate([
+            { $match: buildUserMatch(req) },
             {
                 $group: {
                     _id: null,
@@ -29,13 +42,15 @@ const totalSalesSummary = async (req, res) => {
             totalTax: 0,
         });
     }
-    catch {
+    catch (e) {
+        console.log("error ", e);
         res.status(500).json({ message: "Failed to fetch summary" });
     }
 };
 exports.totalSalesSummary = totalSalesSummary;
 const salesByDate = async (req, res) => {
     try {
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
         const { type = "daily" } = req.query;
         let startDate;
         let format;
@@ -53,9 +68,10 @@ const salesByDate = async (req, res) => {
             startDate.setDate(now.getDate() - 6); // include today
             format = "%Y-%m-%d";
         }
-        const data = await order_model_1.default.aggregate([
+        const data = await Order.aggregate([
             {
                 $match: {
+                    ...buildUserMatch(req),
                     createdAt: {
                         $gte: startDate,
                         $lte: now,
@@ -92,7 +108,9 @@ const salesByDate = async (req, res) => {
 exports.salesByDate = salesByDate;
 const paymentBreakdown = async (req, res) => {
     try {
-        const data = await order_model_1.default.aggregate([
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
+        const data = await Order.aggregate([
+            { $match: buildUserMatch(req) },
             {
                 $group: {
                     _id: "$payment_type",
@@ -110,8 +128,10 @@ const paymentBreakdown = async (req, res) => {
 exports.paymentBreakdown = paymentBreakdown;
 const topSellingProducts = async (req, res) => {
     try {
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
         const limit = Number(req.query.limit) || 10;
-        const data = await order_model_1.default.aggregate([
+        const data = await Order.aggregate([
+            { $match: buildUserMatch(req) },
             { $unwind: "$items" },
             {
                 $group: {
@@ -145,7 +165,9 @@ const topSellingProducts = async (req, res) => {
 exports.topSellingProducts = topSellingProducts;
 const netProfit = async (req, res) => {
     try {
-        const data = await order_model_1.default.aggregate([
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
+        const data = await Order.aggregate([
+            { $match: buildUserMatch(req) },
             { $unwind: "$items" },
             {
                 $lookup: {
@@ -200,14 +222,16 @@ const netProfit = async (req, res) => {
 exports.netProfit = netProfit;
 const hourlySales = async (req, res) => {
     try {
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
         // 📅 Start & end of today
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
-        const rawData = await order_model_1.default.aggregate([
+        const rawData = await Order.aggregate([
             {
                 $match: {
+                    ...buildUserMatch(req),
                     createdAt: {
                         $gte: startOfDay,
                         $lte: endOfDay,
@@ -244,7 +268,9 @@ const hourlySales = async (req, res) => {
 exports.hourlySales = hourlySales;
 const ordersByUser = async (req, res) => {
     try {
-        const data = await order_model_1.default.aggregate([
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
+        const data = await Order.aggregate([
+            { $match: buildUserMatch(req) },
             {
                 $group: {
                     _id: "$user",
@@ -278,8 +304,9 @@ const customReport = async (req, res) => {
     //   "status": "completed"
     // }
     try {
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
         const { from, to, payment_type, status } = req.body;
-        const match = {};
+        const match = buildUserMatch(req);
         if (from && to) {
             match.createdAt = {
                 $gte: new Date(from),
@@ -290,7 +317,7 @@ const customReport = async (req, res) => {
             match.payment_type = payment_type;
         if (status)
             match.status = status;
-        const data = await order_model_1.default.aggregate([
+        const data = await Order.aggregate([
             { $match: match },
             {
                 $group: {

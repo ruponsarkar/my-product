@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getFormAttributesModel = void 0;
 const mongoose_1 = require("mongoose");
 const FormAttributesSchema = new mongoose_1.Schema({
     name: { type: String, required: true, trim: true },
@@ -20,5 +21,11 @@ const FormAttributesSchema = new mongoose_1.Schema({
     order: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
 }, { timestamps: true });
+const getFormAttributesModel = (conn, collectionName) => {
+    if (conn.models.Form_attributes)
+        return conn.models.Form_attributes;
+    return conn.model("Form_attributes", FormAttributesSchema, collectionName);
+};
+exports.getFormAttributesModel = getFormAttributesModel;
 exports.default = (0, mongoose_1.model)("Form_attributes", FormAttributesSchema);
 //# sourceMappingURL=form_attritubes.model.js.map

@@ -1,19 +1,15 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMyOrders = exports.createOrder = void 0;
-const order_model_1 = __importDefault(require("../models/order.model"));
-const product_model_1 = __importDefault(require("../models/product.model"));
+exports.getMyOrders = exports.getOrders = exports.createOrder = void 0;
+const tenant_service_1 = require("../services/tenant.service");
 // helper to generate ORDER ID like ORD0001
-const generateOrderId = async () => {
-    const count = await order_model_1.default.countDocuments();
+const generateOrderId = async (Order) => {
+    const count = await Order.countDocuments();
     return `ORD${String(count + 1).padStart(4, "0")}`;
 };
 const createOrder = async (req, res) => {
     try {
-        const { items, subtotal, discount, tax, total, paidAmount, credit, payment_type, customer_phone, } = req.body;
+        const { items, subtotal, discount, tax, total, paidAmount, credit, payment_type, customer_phone, order_from, } = req.body;
         // basic validation
         if (!items || items.length === 0) {
             return res.status(400).json({ message: "Order items are required" });
@@ -21,12 +17,14 @@ const createOrder = async (req, res) => {
         if (!payment_type) {
             return res.status(400).json({ message: "Payment type is required" });
         }
-        const order_id = await generateOrderId();
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
+        const order_id = await generateOrderId(Order);
         console.log("user ", req.user);
-        const order = new order_model_1.default({
+        const order = new Order({
             user: req.user.id,
             order_id,
             customer_phone: customer_phone || null,
+            order_from: order_from || "POS",
             payment_type,
             items: items.map((item) => ({
                 product: item.product,
@@ -43,7 +41,7 @@ const createOrder = async (req, res) => {
         });
         await order.save();
         // decrement stock
-        await removeStock(items);
+        await removeStock(items, req);
         res.status(201).json({
             message: "Order placed successfully",
             order,
@@ -55,12 +53,108 @@ const createOrder = async (req, res) => {
     }
 };
 exports.createOrder = createOrder;
+const parsePositiveInt = (value, defaultValue) => {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+        return defaultValue;
+    }
+    return parsed;
+};
+const getOrders = async (req, res) => {
+    try {
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
+        const { startDate, endDate, paymentType, user: userId, credit, page, limit } = req.query;
+        const query = {};
+        const isAdmin = req.user?.role === "admin";
+        if (isAdmin) {
+            if (userId && typeof userId === "string") {
+                query.user = userId;
+            }
+        }
+        else {
+            query.user = req.user.id;
+        }
+        if (typeof paymentType === "string") {
+            if (paymentType === "online") {
+                query.payment_type = "online";
+            }
+            else if (paymentType === "offline") {
+                query.payment_type = "cash";
+            }
+            else if (paymentType === "credit") {
+                query.payment_type = "credit";
+            }
+        }
+        if (typeof credit === "string" && credit.toLowerCase() === "true") {
+            query.credit = { $gt: 0 };
+        }
+        if (typeof startDate === "string" || typeof endDate === "string") {
+            query.createdAt = {};
+            if (typeof startDate === "string" && startDate) {
+                const begin = new Date(startDate);
+                if (!Number.isNaN(begin.getTime())) {
+                    query.createdAt.$gte = begin;
+                }
+            }
+            if (typeof endDate === "string" && endDate) {
+                const end = new Date(endDate);
+                if (!Number.isNaN(end.getTime())) {
+                    end.setHours(23, 59, 59, 999);
+                    query.createdAt.$lte = end;
+                }
+            }
+            if (Object.keys(query.createdAt).length === 0) {
+                delete query.createdAt;
+            }
+        }
+        const pageNumber = parsePositiveInt(page, 1);
+        const pageSize = parsePositiveInt(limit, 10);
+        const skip = (pageNumber - 1) * pageSize;
+        const total = await Order.countDocuments(query);
+        const orders = await Order.find(query)
+            .populate("user", "name email role")
+            .populate("client", "name mobile email addressLine1 addressLine2 city")
+            .populate("items.product", "name price")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+        res.json({
+            data: orders,
+            total,
+            page: pageNumber,
+            limit: pageSize,
+            totalPages: Math.ceil(total / pageSize),
+        });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch orders" });
+    }
+};
+exports.getOrders = getOrders;
 const getMyOrders = async (req, res) => {
     try {
-        const orders = await order_model_1.default.find({ user: req.user.id })
+        const { Order } = await (0, tenant_service_1.getTenantModels)(req);
+        const { page, limit } = req.query;
+        const pageNumber = parsePositiveInt(page, 1);
+        const pageSize = parsePositiveInt(limit, 10);
+        const skip = (pageNumber - 1) * pageSize;
+        const query = { user: req.user.id };
+        const total = await Order.countDocuments(query);
+        const orders = await Order.find(query)
             .populate("items.product")
-            .sort({ createdAt: -1 });
-        res.json(orders);
+            .populate("user", "name email role")
+            .populate("client", "name mobile email addressLine1 addressLine2 city")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(pageSize);
+        res.json({
+            data: orders,
+            total,
+            page: pageNumber,
+            limit: pageSize,
+            totalPages: Math.ceil(total / pageSize),
+        });
     }
     catch (err) {
         console.error(err);
@@ -68,9 +162,10 @@ const getMyOrders = async (req, res) => {
     }
 };
 exports.getMyOrders = getMyOrders;
-const removeStock = async (items) => {
+const removeStock = async (items, req) => {
     if (!items.length)
         return;
+    const { Product } = await (0, tenant_service_1.getTenantModels)(req);
     const bulkOps = items.map((item) => ({
         updateOne: {
             filter: { _id: item.product },
@@ -79,6 +174,6 @@ const removeStock = async (items) => {
     }));
     const bulkOps2 = items.map((item) => console.log("item", item));
     console.log("bulkOps", bulkOps);
-    await product_model_1.default.bulkWrite(bulkOps);
+    await Product.bulkWrite(bulkOps);
 };
 //# sourceMappingURL=order.controller.js.map

@@ -1,4 +1,4 @@
-import { Document, Types } from "mongoose";
+import { Document, Types, Connection, Model } from "mongoose";
 export interface IForm extends Document {
     formName: string;
     formFor?: string;
@@ -8,7 +8,8 @@ export interface IForm extends Document {
     createdAt?: Date;
     updatedAt?: Date;
 }
-declare const _default: import("mongoose").Model<IForm, {}, {}, {}, Document<unknown, {}, IForm, {}, {}> & IForm & Required<{
+export declare const getFormModel: (conn: Connection, collectionName?: string) => Model<IForm>;
+declare const _default: Model<IForm, {}, {}, {}, Document<unknown, {}, IForm, {}, {}> & IForm & Required<{
     _id: unknown;
 }> & {
     __v: number;

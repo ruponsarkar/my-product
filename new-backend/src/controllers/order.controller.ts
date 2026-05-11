@@ -22,6 +22,7 @@ export const createOrder = async (
       credit,
       payment_type,
       customer_phone,
+      order_from,
     } = req.body;
 
     // basic validation
@@ -41,6 +42,7 @@ export const createOrder = async (
       user: req.user.id,
       order_id,
       customer_phone: customer_phone || null,
+      order_from: order_from || "POS",
       payment_type,
       items: items.map((item: any) => ({
         product: item.product,
@@ -139,6 +141,7 @@ export const getOrders = async (
     const total = await Order.countDocuments(query);
     const orders = await Order.find(query)
       .populate("user", "name email role")
+      .populate("client", "name mobile email addressLine1 addressLine2 city")
       .populate("items.product", "name price")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -174,6 +177,7 @@ export const getMyOrders = async (
     const orders = await Order.find(query)
       .populate("items.product")
       .populate("user", "name email role")
+      .populate("client", "name mobile email addressLine1 addressLine2 city")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSize);

@@ -1,13 +1,16 @@
-import { Document } from 'mongoose';
+import { Document, Connection, Model } from 'mongoose';
 export interface IUser extends Document {
     _id: any;
     name: string;
     email: string;
     password: string;
-    role: 'user' | 'admin' | 'seller';
+    role: string;
+    permissions?: string[];
+    isActive: boolean;
     comparePassword(candidate: string): Promise<boolean>;
 }
-declare const _default: import("mongoose").Model<IUser, {}, {}, {}, Document<unknown, {}, IUser, {}, {}> & IUser & {
+export declare const getUserModel: (conn: Connection, collectionName?: string) => Model<IUser>;
+declare const _default: Model<IUser, {}, {}, {}, Document<unknown, {}, IUser, {}, {}> & IUser & {
     _id: import("mongoose").Types.ObjectId;
 } & {
     __v: number;

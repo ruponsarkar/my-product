@@ -1,11 +1,22 @@
-import { Schema, Types } from "mongoose";
-declare const _default: import("mongoose").Model<{
+import { Schema, Types, Connection, Model } from "mongoose";
+export declare const getOrderModel: (conn: Connection, collectionName?: string) => Model<any>;
+declare const _default: Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    user: {
+        prototype?: Types.ObjectId | null;
+        cacheHexString?: unknown;
+        generate?: {} | null;
+        createFromTime?: {} | null;
+        createFromHexString?: {} | null;
+        createFromBase64?: {} | null;
+        isValid?: {} | null;
+    };
     discount: number;
     tax: number;
-    user: {
+    client: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
         generate?: {} | null;
@@ -16,8 +27,12 @@ declare const _default: import("mongoose").Model<{
     };
     order_id: string;
     customer_phone: string;
+    customer_name: string;
+    customer_email: string;
+    customer_note: string;
     payment_type: "cash" | "online" | "credit";
     credit: number;
+    order_from: "POS" | "WEB" | "APP";
     items: Types.DocumentArray<{
         product: {
             prototype?: Types.ObjectId | null;
@@ -58,14 +73,28 @@ declare const _default: import("mongoose").Model<{
     subtotal: number;
     total: number;
     paidAmount: number;
-    status: "ordered" | "cash" | "credit" | "paid" | "cancelled" | "completed";
+    delivery_address?: {
+        addressLine1: string;
+        addressLine2: string;
+        city: string;
+    } | null;
 }, {}, {}, {}, import("mongoose").Document<unknown, {}, {
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    user: {
+        prototype?: Types.ObjectId | null;
+        cacheHexString?: unknown;
+        generate?: {} | null;
+        createFromTime?: {} | null;
+        createFromHexString?: {} | null;
+        createFromBase64?: {} | null;
+        isValid?: {} | null;
+    };
     discount: number;
     tax: number;
-    user: {
+    client: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
         generate?: {} | null;
@@ -76,8 +105,12 @@ declare const _default: import("mongoose").Model<{
     };
     order_id: string;
     customer_phone: string;
+    customer_name: string;
+    customer_email: string;
+    customer_note: string;
     payment_type: "cash" | "online" | "credit";
     credit: number;
+    order_from: "POS" | "WEB" | "APP";
     items: Types.DocumentArray<{
         product: {
             prototype?: Types.ObjectId | null;
@@ -118,16 +151,30 @@ declare const _default: import("mongoose").Model<{
     subtotal: number;
     total: number;
     paidAmount: number;
-    status: "ordered" | "cash" | "credit" | "paid" | "cancelled" | "completed";
+    delivery_address?: {
+        addressLine1: string;
+        addressLine2: string;
+        city: string;
+    } | null;
 }, {}, {
     timestamps: true;
 }> & {
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    user: {
+        prototype?: Types.ObjectId | null;
+        cacheHexString?: unknown;
+        generate?: {} | null;
+        createFromTime?: {} | null;
+        createFromHexString?: {} | null;
+        createFromBase64?: {} | null;
+        isValid?: {} | null;
+    };
     discount: number;
     tax: number;
-    user: {
+    client: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
         generate?: {} | null;
@@ -138,8 +185,12 @@ declare const _default: import("mongoose").Model<{
     };
     order_id: string;
     customer_phone: string;
+    customer_name: string;
+    customer_email: string;
+    customer_note: string;
     payment_type: "cash" | "online" | "credit";
     credit: number;
+    order_from: "POS" | "WEB" | "APP";
     items: Types.DocumentArray<{
         product: {
             prototype?: Types.ObjectId | null;
@@ -180,20 +231,34 @@ declare const _default: import("mongoose").Model<{
     subtotal: number;
     total: number;
     paidAmount: number;
-    status: "ordered" | "cash" | "credit" | "paid" | "cancelled" | "completed";
+    delivery_address?: {
+        addressLine1: string;
+        addressLine2: string;
+        city: string;
+    } | null;
 } & {
     _id: Types.ObjectId;
 } & {
     __v: number;
-}, Schema<any, import("mongoose").Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
+}, Schema<any, Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
     timestamps: true;
 }, {
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    user: {
+        prototype?: Types.ObjectId | null;
+        cacheHexString?: unknown;
+        generate?: {} | null;
+        createFromTime?: {} | null;
+        createFromHexString?: {} | null;
+        createFromBase64?: {} | null;
+        isValid?: {} | null;
+    };
     discount: number;
     tax: number;
-    user: {
+    client: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
         generate?: {} | null;
@@ -204,8 +269,12 @@ declare const _default: import("mongoose").Model<{
     };
     order_id: string;
     customer_phone: string;
+    customer_name: string;
+    customer_email: string;
+    customer_note: string;
     payment_type: "cash" | "online" | "credit";
     credit: number;
+    order_from: "POS" | "WEB" | "APP";
     items: Types.DocumentArray<{
         product: {
             prototype?: Types.ObjectId | null;
@@ -246,14 +315,28 @@ declare const _default: import("mongoose").Model<{
     subtotal: number;
     total: number;
     paidAmount: number;
-    status: "ordered" | "cash" | "credit" | "paid" | "cancelled" | "completed";
+    delivery_address?: {
+        addressLine1: string;
+        addressLine2: string;
+        city: string;
+    } | null;
 }, import("mongoose").Document<unknown, {}, import("mongoose").FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    user: {
+        prototype?: Types.ObjectId | null;
+        cacheHexString?: unknown;
+        generate?: {} | null;
+        createFromTime?: {} | null;
+        createFromHexString?: {} | null;
+        createFromBase64?: {} | null;
+        isValid?: {} | null;
+    };
     discount: number;
     tax: number;
-    user: {
+    client: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
         generate?: {} | null;
@@ -264,8 +347,12 @@ declare const _default: import("mongoose").Model<{
     };
     order_id: string;
     customer_phone: string;
+    customer_name: string;
+    customer_email: string;
+    customer_note: string;
     payment_type: "cash" | "online" | "credit";
     credit: number;
+    order_from: "POS" | "WEB" | "APP";
     items: Types.DocumentArray<{
         product: {
             prototype?: Types.ObjectId | null;
@@ -306,16 +393,30 @@ declare const _default: import("mongoose").Model<{
     subtotal: number;
     total: number;
     paidAmount: number;
-    status: "ordered" | "cash" | "credit" | "paid" | "cancelled" | "completed";
+    delivery_address?: {
+        addressLine1: string;
+        addressLine2: string;
+        city: string;
+    } | null;
 }>, {}, import("mongoose").ResolveSchemaOptions<{
     timestamps: true;
 }>> & import("mongoose").FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    user: {
+        prototype?: Types.ObjectId | null;
+        cacheHexString?: unknown;
+        generate?: {} | null;
+        createFromTime?: {} | null;
+        createFromHexString?: {} | null;
+        createFromBase64?: {} | null;
+        isValid?: {} | null;
+    };
     discount: number;
     tax: number;
-    user: {
+    client: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
         generate?: {} | null;
@@ -326,8 +427,12 @@ declare const _default: import("mongoose").Model<{
     };
     order_id: string;
     customer_phone: string;
+    customer_name: string;
+    customer_email: string;
+    customer_note: string;
     payment_type: "cash" | "online" | "credit";
     credit: number;
+    order_from: "POS" | "WEB" | "APP";
     items: Types.DocumentArray<{
         product: {
             prototype?: Types.ObjectId | null;
@@ -368,7 +473,11 @@ declare const _default: import("mongoose").Model<{
     subtotal: number;
     total: number;
     paidAmount: number;
-    status: "ordered" | "cash" | "credit" | "paid" | "cancelled" | "completed";
+    delivery_address?: {
+        addressLine1: string;
+        addressLine2: string;
+        city: string;
+    } | null;
 }> & {
     _id: Types.ObjectId;
 } & {

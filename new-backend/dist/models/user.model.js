@@ -3,13 +3,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getUserModel = void 0;
 const mongoose_1 = require("mongoose");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const getUserModel = (conn, collectionName) => {
+    if (conn.models.User)
+        return conn.models.User;
+    return conn.model('User', UserSchema, collectionName);
+};
+exports.getUserModel = getUserModel;
 const UserSchema = new mongoose_1.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
-    role: { type: String, default: 'user' }
+    role: { type: String, default: 'operator' },
+    permissions: { type: [String], default: [] },
+    isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 UserSchema.pre('save', async function (next) {
     if (!this.isModified('password'))
