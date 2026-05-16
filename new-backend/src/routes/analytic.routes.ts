@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  dashboardOverview,
   totalSalesSummary,
   salesByDate,
   paymentBreakdown,
@@ -13,6 +14,7 @@ import {authMiddleware} from "../middlewares/auth.middleware";
 
 const router = Router();
 
+router.get("/dashboard", authMiddleware, dashboardOverview);
 router.get("/summary", authMiddleware, totalSalesSummary);
 router.get("/sales-by-date", authMiddleware, salesByDate); //sales-by-date?type=daily    sales-by-date?type=monthly
 router.get("/payment-breakdown", authMiddleware, paymentBreakdown);

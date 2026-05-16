@@ -4,6 +4,7 @@ const express_1 = require("express");
 const analytic_controller_1 = require("../controllers/analytic.controller");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
+router.get("/dashboard", auth_middleware_1.authMiddleware, analytic_controller_1.dashboardOverview);
 router.get("/summary", auth_middleware_1.authMiddleware, analytic_controller_1.totalSalesSummary);
 router.get("/sales-by-date", auth_middleware_1.authMiddleware, analytic_controller_1.salesByDate); //sales-by-date?type=daily    sales-by-date?type=monthly
 router.get("/payment-breakdown", auth_middleware_1.authMiddleware, analytic_controller_1.paymentBreakdown);
