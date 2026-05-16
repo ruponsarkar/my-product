@@ -6,6 +6,10 @@ import Tenant from "../models/tenant.model";
 import { getTenantConnection, resolveTenant, findTenant } from "../config/tenant";
 import { getUserModel } from "../models/user.model";
 import { initializeTenantCollections } from "../services/tenant.service";
+import {
+  buildInitialTenantSubscription,
+  buildTenantAccessPayload,
+} from "../services/subscription.service";
 
 const JWT_SECRET = process.env.JWT_SECRET || "access_secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret";
@@ -92,6 +96,7 @@ export const register = async (req: Request, res: Response) => {
       password: hashedPassword,
       dbName,
       settings: tenantSettings,
+      subscription: buildInitialTenantSubscription(),
     });
     await tenant.save();
 
@@ -118,13 +123,11 @@ export const register = async (req: Request, res: Response) => {
     res.status(201).json({
       message: 'Tenant and user registered successfully',
       tenant: {
-        id: tenant._id,
-        tenantId: tenant.tenantId,
-        name: tenant.name,
-        slug: tenant.slug,
+        ...buildTenantAccessPayload(tenant).tenant,
         dbName: tenant.dbName,
         settings: tenant.settings,
       },
+      access: buildTenantAccessPayload(tenant).access,
       user: {
         _id: user._id,
         name: user.name,
@@ -178,12 +181,8 @@ export const login = async (req: Request, res: Response) => {
     res.json({
       token: accessToken,
       refreshToken,
-      tenant: {
-        id: tenant._id,
-        tenantId: tenant.tenantId,
-        name: tenant.name,
-        slug: tenant.slug,
-      },
+      tenant: buildTenantAccessPayload(tenant).tenant,
+      access: buildTenantAccessPayload(tenant).access,
       user: {
         _id: user._id,
         name: user.name,

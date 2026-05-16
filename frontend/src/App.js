@@ -21,6 +21,8 @@ import Users from "./pages/users";
 import Orders from "./pages/orders";
 import Settings from "./pages/settings";
 import Profile from "./pages/profile";
+import BillingPage from "./pages/billing";
+import BillingTransactionsPage from "./pages/billing/transactions";
 
 const withProtection = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
 
@@ -47,6 +49,8 @@ function App() {
               <Route path="/users" element={withProtection(<Sidebar>  <Users /> </Sidebar>)} />
               <Route path="/settings" element={withProtection(<Sidebar>  <Settings /> </Sidebar>)} />
               <Route path="/reports" element={withProtection(<Sidebar>  <Reports /> </Sidebar>)} />
+              <Route path="/billing" element={withProtection(<Sidebar>  <BillingPage /> </Sidebar>)} />
+              <Route path="/billing/transactions" element={withProtection(<Sidebar>  <BillingTransactionsPage /> </Sidebar>)} />
 
 
               <Route path="/feelings" element={withProtection(<AddFeelings />)} />

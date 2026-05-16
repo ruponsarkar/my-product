@@ -81,6 +81,7 @@ const Sidebar = ({ children }) => {
     },
     { text: "Analytics", icon: <BarChartIcon />, path: "/Analytics" },
     { text: "Orders", icon: <ReceiptLongIcon />, path: "/orders" },
+    { text: "Billing", icon: <ReceiptLongIcon />, path: "/billing" },
     { text: "POS", icon: <PointOfSaleIcon />, path: "/ViewProducts" },
    
     ...(currentUser?.role === "admin"

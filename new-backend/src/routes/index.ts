@@ -12,6 +12,7 @@ import productRoutes from "./product.routes";
 import orderRoutes from "./order.routes";
 import settingsRoutes from "./settings.routes";
 import publicRoutes from "./public.routes";
+import subscriptionRoutes from "./subscription.routes";
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use("/products", productRoutes);
 router.use("/orders", orderRoutes); 
 router.use("/public", publicRoutes);
 router.use("/settings", settingsRoutes);
+router.use("/subscriptions", subscriptionRoutes);
 
 router.use('/forms', formRoutes);
 router.use('/form_attritubess', form_attritubesRoutes);
@@ -43,7 +45,6 @@ router.get("/", (req, res)=>{return 'working'});
 
 
 export default router;
-
 
 
 

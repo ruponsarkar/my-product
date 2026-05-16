@@ -27,6 +27,8 @@ export default function Login() {
         token: res.data.token,
         refreshToken: res.data.refreshToken,
         user: res.data.user,
+        tenant: res.data.tenant,
+        access: res.data.access,
       });
 
       navigate(redirectPath, { replace: true });

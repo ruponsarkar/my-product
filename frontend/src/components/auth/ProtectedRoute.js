@@ -5,10 +5,23 @@ import {
   AUTH_TOKEN_KEY,
   clearAuthData,
   getAuthToken,
+  hasFeatureAccess,
+  persistAuthData,
   getStoredUser,
 } from "../../utils/auth";
 
 const adminPaths = ["/settings", "/reports", "/users"];
+const routeFeatureChecks = [
+  { matcher: (path) => path === "/", feature: "dashboard.view" },
+  { matcher: (path) => path === "/viewproducts" || path.startsWith("/product/"), feature: "products.view" },
+  { matcher: (path) => path === "/addproduct" || path.startsWith("/updateproduct/") || path.startsWith("/sell/"), feature: "products.manage" },
+  { matcher: (path) => path === "/analytics", feature: "analytics.view" },
+  { matcher: (path) => path === "/orders" || path.startsWith("/order/"), feature: "orders.manage" },
+  { matcher: (path) => path === "/users", feature: "users.manage" },
+  { matcher: (path) => path === "/settings" || path === "/reports", feature: "settings.manage" },
+  { matcher: (path) => path === "/billing" || path.startsWith("/billing/"), feature: "billing.manage" },
+  { matcher: (path) => path === "/profile", feature: "profile.view" },
+];
 
 export default function ProtectedRoute({ children }) {
   const location = useLocation();
@@ -44,7 +57,22 @@ export default function ProtectedRoute({ children }) {
       }
 
       try {
-        await api.get("/users/me");
+        const response = await api.get("/users/me");
+        if (response?.data) {
+          persistAuthData({
+            token,
+            user: {
+              _id: response.data._id,
+              name: response.data.name,
+              email: response.data.email,
+              role: response.data.role,
+              isActive: response.data.isActive,
+              permissions: response.data.permissions,
+            },
+            tenant: response.data.tenant,
+            access: response.data.access,
+          });
+        }
         if (isMounted) {
           setStatus("authenticated");
         }
@@ -88,11 +116,16 @@ export default function ProtectedRoute({ children }) {
   }
 
   const currentUser = getStoredUser();
+  const normalizedPath = location.pathname.toLowerCase();
   if (status === "authenticated" && currentUser?.role !== "admin") {
-    const normalizedPath = location.pathname.toLowerCase();
     if (adminPaths.some((path) => normalizedPath === path || normalizedPath.startsWith(`${path}/`))) {
       return <Navigate to="/" replace />;
     }
+  }
+
+  const matchedFeature = routeFeatureChecks.find((item) => item.matcher(normalizedPath))?.feature;
+  if (status === "authenticated" && matchedFeature && !hasFeatureAccess(matchedFeature)) {
+    return <Navigate to="/billing" replace />;
   }
 
   return children;

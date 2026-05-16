@@ -1,11 +1,25 @@
 import { Request, Response } from "express";
+import { resolveTenant } from "../config/tenant";
 import { getTenantModels } from "../services/tenant.service";
+import { buildTenantAccessPayload } from "../services/subscription.service";
 
 export const getProfile = async (req: Request & { user?: any }, res: Response) => {
   try {
     const { User } = await getTenantModels(req);
     const user = await User.findById(req.user.id).select("-password");
-    res.json(user);
+    const tenant = await resolveTenant({ tenantId: req.user?.tenantId });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const payload = tenant ? buildTenantAccessPayload(tenant) : null;
+
+    res.json({
+      ...user.toObject(),
+      tenant: payload?.tenant || null,
+      access: payload?.access || null,
+    });
   } catch (err) {
     res.status(500).json({ error: err });
   }
