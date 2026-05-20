@@ -6,9 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const app_1 = __importDefault(require("./app"));
 const db_1 = __importDefault(require("./config/db"));
+const subscription_service_1 = require("./services/subscription.service");
 const PORT = process.env.PORT || 4000;
 (async () => {
     await (0, db_1.default)();
+    await (0, subscription_service_1.ensureDefaultSubscriptionPlans)();
     app_1.default.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 })();
 //# sourceMappingURL=server.js.map

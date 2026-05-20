@@ -4,7 +4,7 @@ declare const _default: Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
-    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    status: "cancelled" | "ordered" | "cash" | "online" | "credit" | "paid" | "completed";
     user: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
@@ -82,7 +82,7 @@ declare const _default: Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
-    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    status: "cancelled" | "ordered" | "cash" | "online" | "credit" | "paid" | "completed";
     user: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
@@ -162,7 +162,7 @@ declare const _default: Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
-    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    status: "cancelled" | "ordered" | "cash" | "online" | "credit" | "paid" | "completed";
     user: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
@@ -246,7 +246,7 @@ declare const _default: Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
-    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    status: "cancelled" | "ordered" | "cash" | "online" | "credit" | "paid" | "completed";
     user: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
@@ -324,7 +324,7 @@ declare const _default: Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
-    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    status: "cancelled" | "ordered" | "cash" | "online" | "credit" | "paid" | "completed";
     user: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;
@@ -404,7 +404,7 @@ declare const _default: Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
-    status: "ordered" | "cash" | "online" | "credit" | "paid" | "cancelled" | "completed";
+    status: "cancelled" | "ordered" | "cash" | "online" | "credit" | "paid" | "completed";
     user: {
         prototype?: Types.ObjectId | null;
         cacheHexString?: unknown;

@@ -11,6 +11,7 @@ const tenant_model_1 = __importDefault(require("../models/tenant.model"));
 const tenant_1 = require("../config/tenant");
 const user_model_1 = require("../models/user.model");
 const tenant_service_1 = require("../services/tenant.service");
+const subscription_service_1 = require("../services/subscription.service");
 const JWT_SECRET = process.env.JWT_SECRET || "access_secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret";
 const DEFAULT_ROLE = "admin";
@@ -85,6 +86,7 @@ const register = async (req, res) => {
             password: hashedPassword,
             dbName,
             settings: tenantSettings,
+            subscription: (0, subscription_service_1.buildInitialTenantSubscription)(),
         });
         await tenant.save();
         const connection = (0, tenant_1.getTenantConnection)(tenant);
@@ -106,13 +108,11 @@ const register = async (req, res) => {
         res.status(201).json({
             message: 'Tenant and user registered successfully',
             tenant: {
-                id: tenant._id,
-                tenantId: tenant.tenantId,
-                name: tenant.name,
-                slug: tenant.slug,
+                ...(0, subscription_service_1.buildTenantAccessPayload)(tenant).tenant,
                 dbName: tenant.dbName,
                 settings: tenant.settings,
             },
+            access: (0, subscription_service_1.buildTenantAccessPayload)(tenant).access,
             user: {
                 _id: user._id,
                 name: user.name,
@@ -158,12 +158,8 @@ const login = async (req, res) => {
         res.json({
             token: accessToken,
             refreshToken,
-            tenant: {
-                id: tenant._id,
-                tenantId: tenant.tenantId,
-                name: tenant.name,
-                slug: tenant.slug,
-            },
+            tenant: (0, subscription_service_1.buildTenantAccessPayload)(tenant).tenant,
+            access: (0, subscription_service_1.buildTenantAccessPayload)(tenant).access,
             user: {
                 _id: user._id,
                 name: user.name,

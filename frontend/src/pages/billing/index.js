@@ -86,6 +86,9 @@ export default function BillingPage() {
       return `Free trial active until ${formatBillingDate(subscription.trialEndsAt)}`;
     }
     if (subscription.status === "active") {
+      if (subscription.autoPayEnabled) {
+        return `${subscription.planLabel || "Paid plan"} autopay active until ${formatBillingDate(subscription.currentPeriodEnd)}`;
+      }
       return `${subscription.planLabel || "Paid plan"} active until ${formatBillingDate(subscription.currentPeriodEnd)}`;
     }
     return "Your workspace is in limited-access mode until a plan is activated.";
@@ -120,14 +123,16 @@ export default function BillingPage() {
       const checkoutData = orderResponse.data;
       const razorpay = new window.Razorpay({
         key: checkoutData.keyId,
-        amount: checkoutData.order.amount,
-        currency: checkoutData.order.currency,
+        subscription_id: checkoutData.subscription.id,
         name: checkoutData.tenant?.name || "Inventory",
-        description: `${checkoutData.transaction.planName} subscription`,
-        order_id: checkoutData.order.id,
+        description: `${checkoutData.transaction.planName} autopay subscription`,
         handler: async (response) => {
-          const verifyResponse = await verifySubscriptionPayment(response);
-          setSuccess(verifyResponse.data?.message || "Subscription activated successfully.");
+          const verifyResponse = await verifySubscriptionPayment({
+            ...response,
+            userName: currentUser?.name || "",
+            userEmail: currentUser?.email || "",
+          });
+          setSuccess(verifyResponse.data?.message || "Autopay mandate saved successfully.");
           persistAuthData({
             user: currentUser,
             tenant: verifyResponse.data?.tenant,
@@ -146,7 +151,7 @@ export default function BillingPage() {
 
       razorpay.on("payment.failed", (event) => {
         setError(
-          event?.error?.description || "Payment failed before the subscription could be activated."
+          event?.error?.description || "Autopay setup failed before the subscription could be activated."
         );
       });
 
@@ -209,6 +214,9 @@ export default function BillingPage() {
               Limited accounts can still use the dashboard and product catalog, but plan activation unlocks
               editing, orders, analytics, settings, and user management.
             </Typography>
+            <Typography sx={{ mt: 1.1, maxWidth: 700, color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
+              Paid plans use Razorpay autopay, so future renewals are collected automatically until the mandate is cancelled.
+            </Typography>
           </Box>
           <Stack spacing={1} alignItems={{ xs: "flex-start", lg: "flex-end" }}>
             <Chip
@@ -216,6 +224,18 @@ export default function BillingPage() {
               color={statusColorMap[subscription.status] || "default"}
               sx={{ fontWeight: 700, textTransform: "capitalize" }}
             />
+            {subscription.gatewayStatus ? (
+              <Chip
+                label={`Autopay ${String(subscription.gatewayStatus).replace("_", " ")}`}
+                variant="outlined"
+                sx={{
+                  color: "#e2e8f0",
+                  borderColor: "rgba(226, 232, 240, 0.32)",
+                  textTransform: "capitalize",
+                  fontWeight: 700,
+                }}
+              />
+            ) : null}
             <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.82)" }}>
               {subscriptionHeadline}
             </Typography>
@@ -280,6 +300,14 @@ export default function BillingPage() {
                 {formatBillingCurrency(subscription.amount, subscription.currency)}
               </Typography>
             </Paper>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: "#f8fafc" }}>
+              <Typography variant="body2" sx={{ color: "#64748b" }}>
+                Autopay
+              </Typography>
+              <Typography variant="h6" sx={{ mt: 0.75, fontWeight: 800, textTransform: "capitalize" }}>
+                {subscription.autoPayEnabled ? subscription.gatewayStatus || "enabled" : "not enabled"}
+              </Typography>
+            </Paper>
           </Box>
           <Divider sx={{ my: 2.5 }} />
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
@@ -315,6 +343,7 @@ export default function BillingPage() {
               "Process POS and order workflows",
               "Access analytics, reports, users, and settings",
               "Keep invoice history for subscription payments",
+              "Renew automatically with Razorpay autopay",
             ].map((item) => (
               <Typography key={item} variant="body2" sx={{ color: "#475569" }}>
                 • {item}
@@ -377,11 +406,11 @@ export default function BillingPage() {
                 boxShadow: "none",
               }}
             >
-              {submittingPlan === plan.code ? "Opening checkout..." : "Pay with Razorpay"}
+              {submittingPlan === plan.code ? "Opening mandate setup..." : "Enable autopay with Razorpay"}
             </Button>
             {currentUser?.role !== "admin" ? (
               <Typography variant="caption" sx={{ mt: 1.25, display: "block", color: "#64748b" }}>
-                Only tenant admins can start subscription payments.
+                Only tenant admins can start subscription autopay.
               </Typography>
             ) : null}
           </Paper>

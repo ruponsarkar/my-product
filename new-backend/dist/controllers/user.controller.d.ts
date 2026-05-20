@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 export declare const getProfile: (req: Request & {
     user?: any;
-}, res: Response) => Promise<void>;
+}, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
 export declare const listUsers: (req: Request & {
     user?: any;
 }, res: Response) => Promise<void>;

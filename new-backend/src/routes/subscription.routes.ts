@@ -4,6 +4,7 @@ import {
   createSubscriptionCheckoutOrder,
   getInvoiceDetails,
   getSubscriptionOverview,
+  handleSubscriptionWebhook,
   listSubscriptionPlans,
   listSubscriptionTransactions,
   verifySubscriptionPayment,
@@ -12,6 +13,7 @@ import { requireSubscriptionFeature } from "../middlewares/subscription.middlewa
 
 const router = Router();
 
+router.post("/webhook", handleSubscriptionWebhook);
 router.get("/overview", authMiddleware, requireSubscriptionFeature("billing.manage"), getSubscriptionOverview);
 router.get("/plans", authMiddleware, requireSubscriptionFeature("billing.manage"), listSubscriptionPlans);
 router.get("/transactions", authMiddleware, requireSubscriptionFeature("billing.manage"), listSubscriptionTransactions);

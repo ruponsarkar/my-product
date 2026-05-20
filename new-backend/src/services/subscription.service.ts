@@ -55,6 +55,8 @@ export type SubscriptionFeature =
   | "billing.manage"
   | "profile.view";
 
+type TenantSubscriptionState = NonNullable<ITenant["subscription"]>;
+
 const addDays = (date: Date, days: number) => {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
@@ -67,7 +69,7 @@ export const addMonths = (date: Date, months: number) => {
   return next;
 };
 
-export const buildInitialTenantSubscription = (startDate = new Date()) => {
+export const buildInitialTenantSubscription = (startDate = new Date()): TenantSubscriptionState => {
   const trialStartsAt = new Date(startDate);
   const trialEndsAt = DEFAULT_TRIAL_DAYS > 0 ? addDays(trialStartsAt, DEFAULT_TRIAL_DAYS) : trialStartsAt;
 
@@ -85,6 +87,12 @@ export const buildInitialTenantSubscription = (startDate = new Date()) => {
     nextBillingAt: trialEndsAt,
     lastPaymentAt: null,
     isTrialUsed: DEFAULT_TRIAL_DAYS > 0,
+    autoPayEnabled: false,
+    gatewayStatus: "",
+    razorpayPlanId: "",
+    razorpaySubscriptionId: "",
+    razorpayCustomerId: "",
+    lastSubscriptionEventAt: null,
   };
 };
 
@@ -102,15 +110,23 @@ export const ensureTenantSubscriptionDefaults = (tenant: ITenant) => {
     tenant.subscription = buildInitialTenantSubscription(tenant.createdAt || new Date());
   }
 
-  tenant.subscription.status = tenant.subscription.status || "expired";
-  tenant.subscription.planCode = tenant.subscription.planCode || "trial";
-  tenant.subscription.planLabel = tenant.subscription.planLabel || "Free Trial";
-  tenant.subscription.billingCycle = tenant.subscription.billingCycle || "trial";
-  tenant.subscription.currency = tenant.subscription.currency || "INR";
-  tenant.subscription.amount = Number(tenant.subscription.amount || 0);
-  tenant.subscription.isTrialUsed = Boolean(tenant.subscription.isTrialUsed);
+  const subscription = tenant.subscription as TenantSubscriptionState;
 
-  return tenant.subscription;
+  subscription.status = subscription.status || "expired";
+  subscription.planCode = subscription.planCode || "trial";
+  subscription.planLabel = subscription.planLabel || "Free Trial";
+  subscription.billingCycle = subscription.billingCycle || "trial";
+  subscription.currency = subscription.currency || "INR";
+  subscription.amount = Number(subscription.amount || 0);
+  subscription.isTrialUsed = Boolean(subscription.isTrialUsed);
+  subscription.autoPayEnabled = Boolean(subscription.autoPayEnabled);
+  subscription.gatewayStatus = subscription.gatewayStatus || "";
+  subscription.razorpayPlanId = subscription.razorpayPlanId || "";
+  subscription.razorpaySubscriptionId = subscription.razorpaySubscriptionId || "";
+  subscription.razorpayCustomerId = subscription.razorpayCustomerId || "";
+  subscription.lastSubscriptionEventAt = subscription.lastSubscriptionEventAt || null;
+
+  return subscription;
 };
 
 export const getTenantAccessState = (tenant: ITenant) => {
@@ -155,6 +171,12 @@ export const getTenantAccessState = (tenant: ITenant) => {
       nextBillingAt: subscription.nextBillingAt || null,
       lastPaymentAt: subscription.lastPaymentAt || null,
       isTrialUsed: Boolean(subscription.isTrialUsed),
+      autoPayEnabled: Boolean(subscription.autoPayEnabled),
+      gatewayStatus: subscription.gatewayStatus || "",
+      razorpayPlanId: subscription.razorpayPlanId || "",
+      razorpaySubscriptionId: subscription.razorpaySubscriptionId || "",
+      razorpayCustomerId: subscription.razorpayCustomerId || "",
+      lastSubscriptionEventAt: subscription.lastSubscriptionEventAt || null,
       trialDays: DEFAULT_TRIAL_DAYS,
     },
   };
@@ -162,7 +184,8 @@ export const getTenantAccessState = (tenant: ITenant) => {
 
 export const hasTenantFeature = (tenant: ITenant, feature: SubscriptionFeature) => {
   const access = getTenantAccessState(tenant);
-  return access.features.includes("*") || access.features.includes(feature);
+  const features = access.features as readonly string[];
+  return features.includes("*") || features.includes(feature);
 };
 
 export const buildTenantAccessPayload = (tenant: ITenant) => {
@@ -225,6 +248,12 @@ export const activateTenantPlan = async (tenant: ITenant, plan: ISubscriptionPla
     nextBillingAt: currentPeriodEnd,
     lastPaymentAt: paidAt,
     isTrialUsed: Boolean(tenant.subscription?.isTrialUsed),
+    autoPayEnabled: Boolean(tenant.subscription?.autoPayEnabled),
+    gatewayStatus: tenant.subscription?.gatewayStatus || "",
+    razorpayPlanId: tenant.subscription?.razorpayPlanId || "",
+    razorpaySubscriptionId: tenant.subscription?.razorpaySubscriptionId || "",
+    razorpayCustomerId: tenant.subscription?.razorpayCustomerId || "",
+    lastSubscriptionEventAt: tenant.subscription?.lastSubscriptionEventAt || null,
   };
 
   await tenant.save();

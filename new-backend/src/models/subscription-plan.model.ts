@@ -8,6 +8,7 @@ export interface ISubscriptionPlan extends Document {
   currency: string;
   durationInMonths: number;
   description?: string;
+  razorpayPlanId?: string;
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -32,6 +33,7 @@ const SubscriptionPlanSchema = new Schema<ISubscriptionPlan>(
     currency: { type: String, default: "INR" },
     durationInMonths: { type: Number, required: true, min: 1 },
     description: { type: String, default: "" },
+    razorpayPlanId: { type: String, default: "", index: true, sparse: true },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

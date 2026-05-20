@@ -1,12 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateUser = exports.createUser = exports.listUsers = exports.getProfile = void 0;
+const tenant_1 = require("../config/tenant");
 const tenant_service_1 = require("../services/tenant.service");
+const subscription_service_1 = require("../services/subscription.service");
 const getProfile = async (req, res) => {
     try {
         const { User } = await (0, tenant_service_1.getTenantModels)(req);
         const user = await User.findById(req.user.id).select("-password");
-        res.json(user);
+        const tenant = await (0, tenant_1.resolveTenant)({ tenantId: req.user?.tenantId });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        const payload = tenant ? (0, subscription_service_1.buildTenantAccessPayload)(tenant) : null;
+        res.json({
+            ...user.toObject(),
+            tenant: payload?.tenant || null,
+            access: payload?.access || null,
+        });
     }
     catch (err) {
         res.status(500).json({ error: err });

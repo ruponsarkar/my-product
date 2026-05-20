@@ -9,6 +9,27 @@ export interface ITenant extends Document {
     dbName: string;
     settings: Record<string, any>;
     status: 'active' | 'inactive';
+    subscription?: {
+        status?: 'trialing' | 'active' | 'expired' | 'cancelled' | 'past_due';
+        planCode?: 'trial' | 'monthly' | 'quarterly' | 'yearly';
+        planLabel?: string;
+        billingCycle?: 'trial' | 'monthly' | 'quarterly' | 'yearly';
+        amount?: number;
+        currency?: string;
+        trialStartedAt?: Date | null;
+        trialEndsAt?: Date | null;
+        currentPeriodStart?: Date | null;
+        currentPeriodEnd?: Date | null;
+        nextBillingAt?: Date | null;
+        lastPaymentAt?: Date | null;
+        isTrialUsed?: boolean;
+        autoPayEnabled?: boolean;
+        gatewayStatus?: string;
+        razorpayPlanId?: string;
+        razorpaySubscriptionId?: string;
+        razorpayCustomerId?: string;
+        lastSubscriptionEventAt?: Date | null;
+    };
     createdAt?: Date;
     updatedAt?: Date;
 }

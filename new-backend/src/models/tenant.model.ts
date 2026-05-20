@@ -24,6 +24,12 @@ export interface ITenant extends Document {
     nextBillingAt?: Date | null;
     lastPaymentAt?: Date | null;
     isTrialUsed?: boolean;
+    autoPayEnabled?: boolean;
+    gatewayStatus?: string;
+    razorpayPlanId?: string;
+    razorpaySubscriptionId?: string;
+    razorpayCustomerId?: string;
+    lastSubscriptionEventAt?: Date | null;
   };
   createdAt?: Date;
   updatedAt?: Date;
@@ -56,6 +62,12 @@ const TenantSubscriptionSchema = new Schema(
     nextBillingAt: { type: Date, default: null },
     lastPaymentAt: { type: Date, default: null },
     isTrialUsed: { type: Boolean, default: false },
+    autoPayEnabled: { type: Boolean, default: false },
+    gatewayStatus: { type: String, default: "" },
+    razorpayPlanId: { type: String, default: "" },
+    razorpaySubscriptionId: { type: String, default: "", index: true, sparse: true },
+    razorpayCustomerId: { type: String, default: "" },
+    lastSubscriptionEventAt: { type: Date, default: null },
   },
   { _id: false }
 );

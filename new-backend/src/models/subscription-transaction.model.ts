@@ -13,8 +13,12 @@ export interface ISubscriptionTransaction extends Document {
   gatewayOrderId?: string;
   gatewayPaymentId?: string;
   gatewaySignature?: string;
+  gatewaySubscriptionId?: string;
   invoiceNumber?: string;
   paidAt?: Date | null;
+  billingCycleStart?: Date | null;
+  billingCycleEnd?: Date | null;
+  eventType?: string;
   metadata?: Record<string, any>;
   createdBy?: {
     userId?: string;
@@ -56,8 +60,12 @@ const SubscriptionTransactionSchema = new Schema<ISubscriptionTransaction>(
     gatewayOrderId: { type: String, index: true, sparse: true },
     gatewayPaymentId: { type: String, index: true, sparse: true },
     gatewaySignature: { type: String, default: "" },
+    gatewaySubscriptionId: { type: String, index: true, sparse: true },
     invoiceNumber: { type: String, index: true, sparse: true },
     paidAt: { type: Date, default: null },
+    billingCycleStart: { type: Date, default: null },
+    billingCycleEnd: { type: Date, default: null },
+    eventType: { type: String, default: "" },
     metadata: { type: Schema.Types.Mixed, default: {} },
     createdBy: {
       userId: { type: String, default: "" },

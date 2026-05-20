@@ -127,3 +127,8 @@ settings: "
 ----------------------------------------------
 db on terminal:
 ssh -L 27018:127.0.0.1:27017 root@72.62.75.203
+
+
+
+-----------------
+mongod --dbpath /opt/homebrew/var/mongodb
