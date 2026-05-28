@@ -12,9 +12,9 @@ export interface ITenant extends Document {
   status: 'active' | 'inactive';
   subscription?: {
     status?: 'trialing' | 'active' | 'expired' | 'cancelled' | 'past_due';
-    planCode?: 'trial' | 'monthly' | 'quarterly' | 'yearly';
+    planCode?: 'trial' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
     planLabel?: string;
-    billingCycle?: 'trial' | 'monthly' | 'quarterly' | 'yearly';
+    billingCycle?: 'trial' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
     amount?: number;
     currency?: string;
     trialStartedAt?: Date | null;
@@ -44,13 +44,13 @@ const TenantSubscriptionSchema = new Schema(
     },
     planCode: {
       type: String,
-      enum: ['trial', 'monthly', 'quarterly', 'yearly'],
+      enum: ['trial', 'weekly', 'monthly', 'quarterly', 'yearly'],
       default: 'trial',
     },
     planLabel: { type: String, default: 'Free Trial' },
     billingCycle: {
       type: String,
-      enum: ['trial', 'monthly', 'quarterly', 'yearly'],
+      enum: ['trial', 'weekly', 'monthly', 'quarterly', 'yearly'],
       default: 'trial',
     },
     amount: { type: Number, default: 0 },

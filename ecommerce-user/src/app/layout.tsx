@@ -2,6 +2,7 @@ import './globals.css';
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { CartProvider } from "@/components/CartProvider";
 import SiteHeader from "@/components/SiteHeader";
+import Footer from '@/components/Footer';
 
 const headingFont = Cormorant_Garamond({
   subsets: ["latin"],
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="min-h-screen px-4 py-6 md:px-8">
             <SiteHeader />
             {children}
+            <Footer />
           </main>
         </CartProvider>
       </body>

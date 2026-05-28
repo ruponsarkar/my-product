@@ -81,6 +81,14 @@ export default function BillingPage() {
   const plans = data?.plans || [];
   const recentTransactions = data?.recentTransactions || [];
 
+  const getPlanIntervalLabel = (plan) => {
+    if (plan.interval === "weekly") {
+      return `Every ${plan.durationInDays === 7 ? "7 days" : `${plan.durationInDays || 7} days`}`;
+    }
+
+    return `Every ${plan.durationInMonths === 1 ? "month" : `${plan.durationInMonths} months`}`;
+  };
+
   const subscriptionHeadline = useMemo(() => {
     if (subscription.status === "trialing") {
       return `Free trial active until ${formatBillingDate(subscription.trialEndsAt)}`;
@@ -392,7 +400,7 @@ export default function BillingPage() {
               {formatBillingCurrency(plan.amount, plan.currency)}
             </Typography>
             <Typography variant="body2" sx={{ mt: 0.75, color: "#64748b" }}>
-              Every {plan.durationInMonths === 1 ? "month" : `${plan.durationInMonths} months`}
+              {getPlanIntervalLabel(plan)}
             </Typography>
             <Button
               fullWidth

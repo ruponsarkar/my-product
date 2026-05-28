@@ -5,6 +5,16 @@ const DEFAULT_TRIAL_DAYS = Math.max(0, Number(process.env.SUBSCRIPTION_TRIAL_DAY
 
 const DEFAULT_SUBSCRIPTION_PLANS = [
   {
+    code: "weekly" as const,
+    name: "7-Day Test",
+    interval: "weekly" as const,
+    amount: 5,
+    currency: "INR",
+    durationInMonths: 1,
+    durationInDays: 7,
+    description: "Temporary testing plan billed every 7 days for Razorpay autopay checks.",
+  },
+  {
     code: "monthly" as const,
     name: "Monthly",
     interval: "monthly" as const,
@@ -67,6 +77,17 @@ export const addMonths = (date: Date, months: number) => {
   const next = new Date(date);
   next.setMonth(next.getMonth() + months);
   return next;
+};
+
+const getPlanPeriodEnd = (
+  startDate: Date,
+  plan: Pick<ISubscriptionPlan, "interval" | "durationInMonths" | "durationInDays">
+) => {
+  if (plan.interval === "weekly") {
+    return addDays(startDate, Number(plan.durationInDays || 7));
+  }
+
+  return addMonths(startDate, plan.durationInMonths);
 };
 
 export const buildInitialTenantSubscription = (startDate = new Date()): TenantSubscriptionState => {
@@ -232,7 +253,7 @@ export const getSubscriptionPlanByCode = async (code: string) => {
 
 export const activateTenantPlan = async (tenant: ITenant, plan: ISubscriptionPlan, paidAt = new Date()) => {
   const currentPeriodStart = paidAt;
-  const currentPeriodEnd = addMonths(currentPeriodStart, plan.durationInMonths);
+  const currentPeriodEnd = getPlanPeriodEnd(currentPeriodStart, plan);
 
   tenant.subscription = {
     status: "active",

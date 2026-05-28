@@ -2,7 +2,7 @@
 
 # dependencies
 /frontend/node_modules
-/new_backend/node_modules
+/new-backend/node_modules
 /node_modules
 /.pnp
 .pnp.js
@@ -13,7 +13,7 @@
 # production
 /build
 /dist
-/new_backend/dist
+/new-backend/dist
 
 # misc
 .DS_Store
@@ -23,7 +23,7 @@
 .env.production.local
 .env
 /frontend/build
-/new_backend/build
+/new-backend/build
 /frontend/.env
 /new-backend/.env
 

@@ -3,9 +3,9 @@ import { Document, Schema, Types, model } from "mongoose";
 export interface ISubscriptionTransaction extends Document {
   tenant: Types.ObjectId;
   tenantId: string;
-  planCode: "monthly" | "quarterly" | "yearly";
+  planCode: "weekly" | "monthly" | "quarterly" | "yearly";
   planName: string;
-  billingCycle: "monthly" | "quarterly" | "yearly";
+  billingCycle: "weekly" | "monthly" | "quarterly" | "yearly";
   amount: number;
   currency: string;
   status: "created" | "paid" | "failed" | "expired" | "refunded";
@@ -35,13 +35,13 @@ const SubscriptionTransactionSchema = new Schema<ISubscriptionTransaction>(
     tenantId: { type: String, required: true, index: true },
     planCode: {
       type: String,
-      enum: ["monthly", "quarterly", "yearly"],
+      enum: ["weekly", "monthly", "quarterly", "yearly"],
       required: true,
     },
     planName: { type: String, required: true },
     billingCycle: {
       type: String,
-      enum: ["monthly", "quarterly", "yearly"],
+      enum: ["weekly", "monthly", "quarterly", "yearly"],
       required: true,
     },
     amount: { type: Number, required: true, min: 0 },

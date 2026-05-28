@@ -28,6 +28,7 @@ const formatPlan = (plan: any) => ({
   amount: Number(plan.amount || 0),
   currency: plan.currency || "INR",
   durationInMonths: Number(plan.durationInMonths || 0),
+  durationInDays: Number(plan.durationInDays || 0),
   description: plan.description || "",
 });
 
@@ -57,6 +58,15 @@ const callRazorpayApi = async (path: string, init: RequestInit = {}) => {
   return response.json();
 };
 
+const isMissingRazorpayEntityError = (error: unknown) => {
+  const message = String((error as any)?.message || "");
+  return (
+    message.includes('"code":"BAD_REQUEST_ERROR"') &&
+    message.includes("invalid") &&
+    message.includes("could not be found")
+  );
+};
+
 const toDateFromUnix = (value?: number | null) => {
   if (!value) return null;
   const date = new Date(Number(value) * 1000);
@@ -69,6 +79,8 @@ const mapPlanToRazorpayFrequency = (interval: string) => {
       return { period: "yearly", interval: 1 };
     case "quarterly":
       return { period: "quarterly", interval: 1 };
+    case "weekly":
+      return { period: "weekly", interval: 1 };
     case "monthly":
     default:
       return { period: "monthly", interval: 1 };
@@ -159,7 +171,17 @@ const updateTenantFromGatewaySubscription = ({
 
 const ensureRazorpayPlan = async (plan: any) => {
   if (plan.razorpayPlanId) {
-    return plan.razorpayPlanId;
+    try {
+      await callRazorpayApi(`/plans/${plan.razorpayPlanId}`, { method: "GET" });
+      return plan.razorpayPlanId;
+    } catch (error) {
+      if (!isMissingRazorpayEntityError(error)) {
+        throw error;
+      }
+
+      plan.razorpayPlanId = "";
+      await plan.save();
+    }
   }
 
   const frequency = mapPlanToRazorpayFrequency(plan.interval);
