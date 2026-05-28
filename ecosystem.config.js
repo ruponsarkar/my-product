@@ -4,7 +4,7 @@ module.exports = {
       name: "bill-app-frontend",
       cwd: "/var/www/billapp/my-product/frontend",
       script: "npx",
-      args: "serve -s build -l 3001",
+      args: "serve -s build -l 3000",
       env: {
         NODE_ENV: "production"
       }
