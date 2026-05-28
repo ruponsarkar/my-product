@@ -8,7 +8,7 @@ const DEFAULT_SUBSCRIPTION_PLANS = [
     code: "weekly" as const,
     name: "7-Day Test",
     interval: "weekly" as const,
-    amount: 5,
+    amount: 29,
     currency: "INR",
     durationInMonths: 1,
     durationInDays: 7,

@@ -132,3 +132,19 @@ ssh -L 27018:127.0.0.1:27017 root@72.62.75.203
 
 -----------------
 mongod --dbpath /opt/homebrew/var/mongodb
+
+
+--------------------------
+update subscription :
+
+npm run subscription:plan:update -- --code monthly --amount 299 --dry-run
+npm run subscription:plan:update -- --code monthly --amount 299
+
+Optional flags:
+--currency INR
+--name "Monthly"
+--description "Updated monthly plan"
+--duration-months 1
+--duration-days 7
+
+--------------------------

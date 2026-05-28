@@ -11,7 +11,8 @@
     "test": "jest --runInBand",
     "lint": "eslint . --ext .ts",
     "make:model": "ts-node ./scripts/generate-model.ts",
-    "tenant:migrate": "ts-node ./scripts/migrate-tenant-collections.ts"
+    "tenant:migrate": "ts-node ./scripts/migrate-tenant-collections.ts",
+    "subscription:plan:update": "ts-node ./scripts/update-subscription-plan.ts"
   },
   "keywords": [],
   "author": "",
