@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "bill-app-frontend",
+      name: "prod-app-frontend",
       cwd: "/var/www/billapp/my-product/frontend",
       script: "npx",
       args: "serve -s build -l 3000",
@@ -10,7 +10,7 @@ module.exports = {
       }
     },
     {
-      name: "bill-app-backend",
+      name: "prod-app-backend",
       cwd: "/var/www/billapp/my-product/new-backend",
       script: "npm",
       args: "run dev",
