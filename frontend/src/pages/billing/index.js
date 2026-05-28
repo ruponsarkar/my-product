@@ -17,6 +17,7 @@ import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import { useNavigate } from "react-router-dom";
 import {
+  cancelSubscriptionAutopay,
   createSubscriptionCheckoutOrder,
   getInvoiceDetails,
   getSubscriptionOverview,
@@ -50,6 +51,7 @@ export default function BillingPage() {
   const currentUser = getStoredUser();
   const [loading, setLoading] = useState(true);
   const [submittingPlan, setSubmittingPlan] = useState("");
+  const [processingAction, setProcessingAction] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [data, setData] = useState(null);
@@ -90,6 +92,12 @@ export default function BillingPage() {
   };
 
   const subscriptionHeadline = useMemo(() => {
+    if (subscription.pendingPlanLabel && subscription.pendingChangeEffectiveAt) {
+      return `${subscription.pendingPlanLabel} is scheduled to start on ${formatBillingDate(subscription.pendingChangeEffectiveAt)}.`;
+    }
+    if (subscription.cancelAtPeriodEnd) {
+      return `Autopay will stop at the end of the current billing cycle on ${formatBillingDate(subscription.currentPeriodEnd)}.`;
+    }
     if (subscription.status === "trialing") {
       return `Free trial active until ${formatBillingDate(subscription.trialEndsAt)}`;
     }
@@ -117,11 +125,8 @@ export default function BillingPage() {
     setSubmittingPlan(planCode);
 
     try {
+      const selectedPlan = plans.find((plan) => plan.code === planCode);
       const checkoutReady = await loadRazorpayScript();
-      if (!checkoutReady || !window.Razorpay) {
-        throw new Error("Razorpay checkout could not be loaded.");
-      }
-
       const orderResponse = await createSubscriptionCheckoutOrder({
         planCode,
         userName: currentUser?.name || "",
@@ -129,11 +134,26 @@ export default function BillingPage() {
       });
 
       const checkoutData = orderResponse.data;
+      if (checkoutData?.action === "already_active" || checkoutData?.action === "scheduled_change") {
+        setSuccess(checkoutData.message || "Subscription updated successfully.");
+        persistAuthData({
+          user: currentUser,
+          tenant: checkoutData?.tenant,
+          access: checkoutData?.access,
+        });
+        await loadOverview();
+        return;
+      }
+
+      if (!checkoutReady || !window.Razorpay) {
+        throw new Error("Razorpay checkout could not be loaded.");
+      }
+
       const razorpay = new window.Razorpay({
         key: checkoutData.keyId,
         subscription_id: checkoutData.subscription.id,
         name: checkoutData.tenant?.name || "Inventory",
-        description: `${checkoutData.transaction.planName} autopay subscription`,
+        description: `${checkoutData.transaction?.planName || selectedPlan?.name || "Plan"} autopay subscription`,
         handler: async (response) => {
           const verifyResponse = await verifySubscriptionPayment({
             ...response,
@@ -172,6 +192,35 @@ export default function BillingPage() {
       );
     } finally {
       setSubmittingPlan("");
+    }
+  };
+
+  const handleStopAutopay = async () => {
+    const confirmed = window.confirm(
+      "Stop future autopay charges after the current billing cycle ends?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setProcessingAction("cancel-autopay");
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await cancelSubscriptionAutopay();
+      setSuccess(response.data?.message || "Autopay stop has been scheduled.");
+      persistAuthData({
+        user: currentUser,
+        tenant: response.data?.tenant,
+        access: response.data?.access,
+      });
+      await loadOverview();
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || "Unable to stop autopay.");
+    } finally {
+      setProcessingAction("");
     }
   };
 
@@ -313,7 +362,11 @@ export default function BillingPage() {
                 Autopay
               </Typography>
               <Typography variant="h6" sx={{ mt: 0.75, fontWeight: 800, textTransform: "capitalize" }}>
-                {subscription.autoPayEnabled ? subscription.gatewayStatus || "enabled" : "not enabled"}
+                {subscription.cancelAtPeriodEnd
+                  ? "stops at cycle end"
+                  : subscription.autoPayEnabled
+                    ? subscription.gatewayStatus || "enabled"
+                    : "not enabled"}
               </Typography>
             </Paper>
           </Box>
@@ -334,6 +387,21 @@ export default function BillingPage() {
               sx={{ textTransform: "none", fontWeight: 700 }}
             >
               Refresh status
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleStopAutopay}
+              disabled={
+                currentUser?.role !== "admin" ||
+                processingAction === "cancel-autopay" ||
+                !subscription.razorpaySubscriptionId ||
+                subscription.cancelAtPeriodEnd ||
+                !subscription.autoPayEnabled
+              }
+              sx={{ textTransform: "none", fontWeight: 700 }}
+            >
+              {processingAction === "cancel-autopay" ? "Stopping autopay..." : "Stop autopay"}
             </Button>
           </Stack>
         </Paper>
@@ -394,7 +462,11 @@ export default function BillingPage() {
                   {plan.description}
                 </Typography>
               </Box>
-              {plan.code === "yearly" ? <Chip label="Best value" color="success" /> : null}
+              <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+                {subscription.planCode === plan.code ? <Chip label="Current plan" color="info" /> : null}
+                {subscription.pendingPlanCode === plan.code ? <Chip label="Scheduled" color="warning" /> : null}
+                {plan.code === "yearly" ? <Chip label="Best value" color="success" /> : null}
+              </Stack>
             </Stack>
             <Typography variant="h3" sx={{ mt: 3, fontWeight: 900, letterSpacing: "-0.05em" }}>
               {formatBillingCurrency(plan.amount, plan.currency)}
@@ -406,7 +478,11 @@ export default function BillingPage() {
               fullWidth
               variant={plan.code === "yearly" ? "contained" : "outlined"}
               onClick={() => handlePlanCheckout(plan.code)}
-              disabled={submittingPlan === plan.code || currentUser?.role !== "admin"}
+              disabled={
+                submittingPlan === plan.code ||
+                currentUser?.role !== "admin" ||
+                subscription.pendingPlanCode === plan.code
+              }
               sx={{
                 mt: 3,
                 textTransform: "none",
@@ -414,11 +490,23 @@ export default function BillingPage() {
                 boxShadow: "none",
               }}
             >
-              {submittingPlan === plan.code ? "Opening mandate setup..." : "Enable autopay with Razorpay"}
+              {submittingPlan === plan.code
+                ? "Processing..."
+                : subscription.planCode === plan.code && subscription.autoPayEnabled && !subscription.cancelAtPeriodEnd
+                  ? "Current autopay plan"
+                  : subscription.planCode === plan.code && subscription.cancelAtPeriodEnd
+                    ? "Re-enable this plan"
+                    : subscription.razorpaySubscriptionId
+                      ? "Switch to this plan"
+                      : "Enable autopay with Razorpay"}
             </Button>
             {currentUser?.role !== "admin" ? (
               <Typography variant="caption" sx={{ mt: 1.25, display: "block", color: "#64748b" }}>
                 Only tenant admins can start subscription autopay.
+              </Typography>
+            ) : subscription.pendingPlanCode === plan.code ? (
+              <Typography variant="caption" sx={{ mt: 1.25, display: "block", color: "#92400e" }}>
+                This plan will replace the current plan at the end of the billing cycle.
               </Typography>
             ) : null}
           </Paper>

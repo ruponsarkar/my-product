@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authMiddleware, authorizeRoles } from "../middlewares/auth.middleware";
 import {
+  cancelSubscriptionAutopay,
   createSubscriptionCheckoutOrder,
   getInvoiceDetails,
   getSubscriptionOverview,
@@ -31,6 +32,13 @@ router.post(
   authorizeRoles("admin"),
   requireSubscriptionFeature("billing.manage"),
   verifySubscriptionPayment
+);
+router.post(
+  "/cancel-autopay",
+  authMiddleware,
+  authorizeRoles("admin"),
+  requireSubscriptionFeature("billing.manage"),
+  cancelSubscriptionAutopay
 );
 
 export default router;

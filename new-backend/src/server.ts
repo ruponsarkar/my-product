@@ -3,7 +3,8 @@ import app from './app';
 import connectDB from './config/db';
 import { ensureDefaultSubscriptionPlans } from './services/subscription.service';
 
-const PORT = process.env.PORT || 4000;
+const parsedPort = Number(process.env.PORT);
+const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 4000;
 
 (async () => {
   await connectDB();

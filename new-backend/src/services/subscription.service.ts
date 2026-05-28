@@ -113,6 +113,13 @@ export const buildInitialTenantSubscription = (startDate = new Date()): TenantSu
     razorpayPlanId: "",
     razorpaySubscriptionId: "",
     razorpayCustomerId: "",
+    cancelAtPeriodEnd: false,
+    pendingPlanCode: "",
+    pendingPlanLabel: "",
+    pendingBillingCycle: "",
+    pendingAmount: 0,
+    pendingCurrency: "",
+    pendingChangeEffectiveAt: null,
     lastSubscriptionEventAt: null,
   };
 };
@@ -145,6 +152,13 @@ export const ensureTenantSubscriptionDefaults = (tenant: ITenant) => {
   subscription.razorpayPlanId = subscription.razorpayPlanId || "";
   subscription.razorpaySubscriptionId = subscription.razorpaySubscriptionId || "";
   subscription.razorpayCustomerId = subscription.razorpayCustomerId || "";
+  subscription.cancelAtPeriodEnd = Boolean(subscription.cancelAtPeriodEnd);
+  subscription.pendingPlanCode = subscription.pendingPlanCode || "";
+  subscription.pendingPlanLabel = subscription.pendingPlanLabel || "";
+  subscription.pendingBillingCycle = subscription.pendingBillingCycle || "";
+  subscription.pendingAmount = Number(subscription.pendingAmount || 0);
+  subscription.pendingCurrency = subscription.pendingCurrency || "";
+  subscription.pendingChangeEffectiveAt = subscription.pendingChangeEffectiveAt || null;
   subscription.lastSubscriptionEventAt = subscription.lastSubscriptionEventAt || null;
 
   return subscription;
@@ -197,6 +211,13 @@ export const getTenantAccessState = (tenant: ITenant) => {
       razorpayPlanId: subscription.razorpayPlanId || "",
       razorpaySubscriptionId: subscription.razorpaySubscriptionId || "",
       razorpayCustomerId: subscription.razorpayCustomerId || "",
+      cancelAtPeriodEnd: Boolean(subscription.cancelAtPeriodEnd),
+      pendingPlanCode: subscription.pendingPlanCode || "",
+      pendingPlanLabel: subscription.pendingPlanLabel || "",
+      pendingBillingCycle: subscription.pendingBillingCycle || "",
+      pendingAmount: Number(subscription.pendingAmount || 0),
+      pendingCurrency: subscription.pendingCurrency || "",
+      pendingChangeEffectiveAt: subscription.pendingChangeEffectiveAt || null,
       lastSubscriptionEventAt: subscription.lastSubscriptionEventAt || null,
       trialDays: DEFAULT_TRIAL_DAYS,
     },
@@ -274,6 +295,13 @@ export const activateTenantPlan = async (tenant: ITenant, plan: ISubscriptionPla
     razorpayPlanId: tenant.subscription?.razorpayPlanId || "",
     razorpaySubscriptionId: tenant.subscription?.razorpaySubscriptionId || "",
     razorpayCustomerId: tenant.subscription?.razorpayCustomerId || "",
+    cancelAtPeriodEnd: Boolean(tenant.subscription?.cancelAtPeriodEnd),
+    pendingPlanCode: tenant.subscription?.pendingPlanCode || "",
+    pendingPlanLabel: tenant.subscription?.pendingPlanLabel || "",
+    pendingBillingCycle: tenant.subscription?.pendingBillingCycle || "",
+    pendingAmount: Number(tenant.subscription?.pendingAmount || 0),
+    pendingCurrency: tenant.subscription?.pendingCurrency || "",
+    pendingChangeEffectiveAt: tenant.subscription?.pendingChangeEffectiveAt || null,
     lastSubscriptionEventAt: tenant.subscription?.lastSubscriptionEventAt || null,
   };
 

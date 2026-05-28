@@ -29,6 +29,13 @@ export interface ITenant extends Document {
     razorpayPlanId?: string;
     razorpaySubscriptionId?: string;
     razorpayCustomerId?: string;
+    cancelAtPeriodEnd?: boolean;
+    pendingPlanCode?: 'weekly' | 'monthly' | 'quarterly' | 'yearly' | '';
+    pendingPlanLabel?: string;
+    pendingBillingCycle?: 'weekly' | 'monthly' | 'quarterly' | 'yearly' | '';
+    pendingAmount?: number;
+    pendingCurrency?: string;
+    pendingChangeEffectiveAt?: Date | null;
     lastSubscriptionEventAt?: Date | null;
   };
   createdAt?: Date;
@@ -67,6 +74,13 @@ const TenantSubscriptionSchema = new Schema(
     razorpayPlanId: { type: String, default: "" },
     razorpaySubscriptionId: { type: String, default: "", index: true, sparse: true },
     razorpayCustomerId: { type: String, default: "" },
+    cancelAtPeriodEnd: { type: Boolean, default: false },
+    pendingPlanCode: { type: String, default: "" },
+    pendingPlanLabel: { type: String, default: "" },
+    pendingBillingCycle: { type: String, default: "" },
+    pendingAmount: { type: Number, default: 0 },
+    pendingCurrency: { type: String, default: "" },
+    pendingChangeEffectiveAt: { type: Date, default: null },
     lastSubscriptionEventAt: { type: Date, default: null },
   },
   { _id: false }

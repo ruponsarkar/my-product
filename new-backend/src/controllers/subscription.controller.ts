@@ -124,6 +124,69 @@ const isAutopayEnabledStatus = (gatewayStatus: string) => {
   return !["cancelled", "completed", "expired"].includes(normalizedStatus);
 };
 
+const clearScheduledSubscriptionChanges = (tenant: any) => {
+  tenant.subscription = {
+    ...(tenant.subscription || {}),
+    cancelAtPeriodEnd: false,
+    pendingPlanCode: "",
+    pendingPlanLabel: "",
+    pendingBillingCycle: "",
+    pendingAmount: 0,
+    pendingCurrency: "",
+    pendingChangeEffectiveAt: null,
+  };
+};
+
+const setPendingPlanChange = (tenant: any, plan: any, effectiveAt: Date | null) => {
+  tenant.subscription = {
+    ...(tenant.subscription || {}),
+    cancelAtPeriodEnd: false,
+    pendingPlanCode: plan.code,
+    pendingPlanLabel: plan.name,
+    pendingBillingCycle: plan.interval,
+    pendingAmount: Number(plan.amount || 0),
+    pendingCurrency: plan.currency || "INR",
+    pendingChangeEffectiveAt: effectiveAt,
+  };
+};
+
+const applyTenantSubscriptionSnapshot = ({
+  tenant,
+  subscriptionEntity,
+  plan,
+  cancelAtPeriodEnd,
+}: {
+  tenant: any;
+  subscriptionEntity: any;
+  plan?: any;
+  cancelAtPeriodEnd?: boolean;
+}) => {
+  const gatewayStatus = String(subscriptionEntity?.status || "").toLowerCase();
+  const currentPeriodEnd =
+    toDateFromUnix(subscriptionEntity?.current_end) || tenant.subscription?.currentPeriodEnd || null;
+
+  updateTenantFromGatewaySubscription({
+    tenant,
+    plan,
+    subscriptionEntity,
+    eventType: "subscription.snapshot",
+  });
+
+  if (gatewayStatus === "cancelled" || gatewayStatus === "completed" || gatewayStatus === "expired") {
+    clearScheduledSubscriptionChanges(tenant);
+    tenant.subscription.autoPayEnabled = false;
+    return;
+  }
+
+  if (typeof cancelAtPeriodEnd === "boolean") {
+    tenant.subscription.cancelAtPeriodEnd = cancelAtPeriodEnd;
+    if (cancelAtPeriodEnd) {
+      tenant.subscription.autoPayEnabled = false;
+      tenant.subscription.nextBillingAt = currentPeriodEnd;
+    }
+  }
+};
+
 const updateTenantFromGatewaySubscription = ({
   tenant,
   plan,
@@ -161,11 +224,31 @@ const updateTenantFromGatewaySubscription = ({
     razorpayPlanId: subscriptionEntity?.plan_id || tenant.subscription?.razorpayPlanId || "",
     razorpaySubscriptionId: subscriptionEntity?.id || tenant.subscription?.razorpaySubscriptionId || "",
     razorpayCustomerId: subscriptionEntity?.customer_id || tenant.subscription?.razorpayCustomerId || "",
+    cancelAtPeriodEnd: Boolean(tenant.subscription?.cancelAtPeriodEnd),
+    pendingPlanCode: tenant.subscription?.pendingPlanCode || "",
+    pendingPlanLabel: tenant.subscription?.pendingPlanLabel || "",
+    pendingBillingCycle: tenant.subscription?.pendingBillingCycle || "",
+    pendingAmount: Number(tenant.subscription?.pendingAmount || 0),
+    pendingCurrency: tenant.subscription?.pendingCurrency || "",
+    pendingChangeEffectiveAt: tenant.subscription?.pendingChangeEffectiveAt || null,
     lastSubscriptionEventAt: new Date(),
   };
 
   if (eventType === "subscription.charged") {
     tenant.subscription.lastPaymentAt = new Date();
+  }
+
+  if (
+    subscriptionEntity?.plan_id &&
+    tenant.subscription?.pendingPlanCode &&
+    subscriptionEntity.plan_id === plan?.razorpayPlanId
+  ) {
+    clearScheduledSubscriptionChanges(tenant);
+  }
+
+  if (gatewayStatus === "cancelled" || gatewayStatus === "completed" || gatewayStatus === "expired") {
+    clearScheduledSubscriptionChanges(tenant);
+    tenant.subscription.autoPayEnabled = false;
   }
 };
 
@@ -214,6 +297,13 @@ const resolvePlanForSubscription = async ({
   planCode?: string;
   razorpayPlanId?: string;
 }) => {
+  if (razorpayPlanId) {
+    const planByGatewayId = await SubscriptionPlan.findOne({ razorpayPlanId });
+    if (planByGatewayId) {
+      return planByGatewayId;
+    }
+  }
+
   if (planCode) {
     const planByCode = await getSubscriptionPlanByCode(String(planCode));
     if (planByCode) {
@@ -221,15 +311,89 @@ const resolvePlanForSubscription = async ({
     }
   }
 
-  if (razorpayPlanId) {
-    return SubscriptionPlan.findOne({ razorpayPlanId });
-  }
-
   return null;
 };
 
 const fetchRazorpaySubscription = async (subscriptionId: string) =>
   callRazorpayApi(`/subscriptions/${subscriptionId}`, { method: "GET" });
+
+const cancelRazorpaySubscription = async (subscriptionId: string, cancelAtCycleEnd: boolean) =>
+  callRazorpayApi(`/subscriptions/${subscriptionId}/cancel`, {
+    method: "POST",
+    body: JSON.stringify({
+      cancel_at_cycle_end: cancelAtCycleEnd,
+    }),
+  });
+
+const updateRazorpaySubscriptionPlan = async ({
+  subscriptionId,
+  planId,
+}: {
+  subscriptionId: string;
+  planId: string;
+}) =>
+  callRazorpayApi(`/subscriptions/${subscriptionId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      plan_id: planId,
+      schedule_change_at: "cycle_end",
+      customer_notify: true,
+    }),
+  });
+
+const getReusableCheckoutTransaction = async ({
+  subscriptionId,
+  tenantId,
+}: {
+  subscriptionId: string;
+  tenantId: string;
+}) =>
+  SubscriptionTransaction.findOne({
+    gatewaySubscriptionId: subscriptionId,
+    tenantId,
+  }).sort({ createdAt: -1 });
+
+const buildCheckoutResponse = ({
+  tenant,
+  subscription,
+  transaction,
+  statusCode = 201,
+  action = "checkout",
+  message = "",
+}: {
+  tenant: any;
+  subscription: any;
+  transaction: any;
+  statusCode?: number;
+  action?: string;
+  message?: string;
+}) => ({
+  statusCode,
+  payload: {
+    action,
+    message,
+    keyId: RAZORPAY_KEY_ID,
+    subscription: {
+      id: subscription.id,
+      status: subscription.status,
+      shortUrl: subscription.short_url || "",
+    },
+    transaction: transaction
+      ? {
+          id: transaction._id,
+          planCode: transaction.planCode,
+          planName: transaction.planName,
+          amount: transaction.amount,
+          currency: transaction.currency,
+        }
+      : null,
+    tenant: {
+      name: tenant.name,
+      email: tenant.email,
+      contact: "",
+    },
+  },
+});
 
 const getTenantForGatewaySubscription = async (subscriptionEntity: any) => {
   const tenantIdFromNotes = subscriptionEntity?.notes?.tenantId;
@@ -317,14 +481,26 @@ const finalizeSubscriptionCharge = async ({
   const billingCycleStart = toDateFromUnix(subscriptionEntity?.current_start);
   const billingCycleEnd = toDateFromUnix(subscriptionEntity?.current_end);
 
-  let transaction =
-    (paymentId
-      ? await SubscriptionTransaction.findOne({ gatewayPaymentId: paymentId, tenantId: tenant.tenantId })
-      : null) ||
-    (await SubscriptionTransaction.findOne({
+  let transaction = paymentId
+    ? await SubscriptionTransaction.findOne({ gatewayPaymentId: paymentId, tenantId: tenant.tenantId })
+    : null;
+
+  if (!transaction) {
+    const latestSubscriptionTransaction = await SubscriptionTransaction.findOne({
       gatewaySubscriptionId: subscriptionEntity?.id,
       tenantId: tenant.tenantId,
-    }).sort({ createdAt: -1 }));
+    }).sort({ createdAt: -1 });
+
+    const canReuseLatestTransaction =
+      Boolean(latestSubscriptionTransaction) &&
+      latestSubscriptionTransaction?.status === "created" &&
+      !latestSubscriptionTransaction?.gatewayPaymentId &&
+      !latestSubscriptionTransaction?.invoiceNumber;
+
+    if (canReuseLatestTransaction) {
+      transaction = latestSubscriptionTransaction;
+    }
+  }
 
   if (!transaction) {
     transaction = new SubscriptionTransaction({
@@ -336,6 +512,13 @@ const finalizeSubscriptionCharge = async ({
       amount: plan.amount,
       currency: plan.currency || "INR",
       gateway: "razorpay",
+      status: "created",
+      gatewaySubscriptionId: subscriptionEntity?.id || "",
+      createdBy: {
+        userId: createdBy?.userId || "",
+        name: createdBy?.name || "",
+        email: createdBy?.email || "",
+      },
     });
   }
 
@@ -455,6 +638,102 @@ export const createSubscriptionCheckoutOrder = async (req: AuthRequest, res: Res
     }
 
     const razorpayPlanId = await ensureRazorpayPlan(plan);
+    const existingSubscriptionId = String(tenant.subscription?.razorpaySubscriptionId || "");
+
+    if (existingSubscriptionId) {
+      let existingSubscription: any = null;
+
+      try {
+        existingSubscription = await fetchRazorpaySubscription(existingSubscriptionId);
+      } catch (error) {
+        if (!isMissingRazorpayEntityError(error)) {
+          throw error;
+        }
+        clearScheduledSubscriptionChanges(tenant);
+        tenant.subscription = {
+          ...(tenant.subscription || {}),
+          razorpaySubscriptionId: "",
+          razorpayCustomerId: "",
+          razorpayPlanId: "",
+          autoPayEnabled: false,
+          gatewayStatus: "",
+        };
+        await tenant.save();
+      }
+
+      if (existingSubscription?.id) {
+        const existingStatus = String(existingSubscription.status || "").toLowerCase();
+        const existingPlanId = String(existingSubscription.plan_id || "");
+        const isSamePlan = existingPlanId === razorpayPlanId;
+        const isLiveSubscription = ["active", "authenticated"].includes(existingStatus);
+        const isRestartableCheckout = ["created", "pending", "halted"].includes(existingStatus);
+
+        if (isSamePlan && isLiveSubscription) {
+          applyTenantSubscriptionSnapshot({
+            tenant,
+            subscriptionEntity: existingSubscription,
+            plan,
+            cancelAtPeriodEnd: Boolean(tenant.subscription?.cancelAtPeriodEnd),
+          });
+          await tenant.save();
+          return res.status(200).json({
+            action: "already_active",
+            message: "Autopay is already enabled for this plan.",
+            ...buildTenantAccessPayload(tenant),
+          });
+        }
+
+        if (!isSamePlan && isLiveSubscription) {
+          const updatedSubscription = await updateRazorpaySubscriptionPlan({
+            subscriptionId: existingSubscription.id,
+            planId: razorpayPlanId,
+          });
+
+          setPendingPlanChange(tenant, plan, toDateFromUnix(existingSubscription.current_end));
+          applyTenantSubscriptionSnapshot({
+            tenant,
+            subscriptionEntity: updatedSubscription,
+            cancelAtPeriodEnd: false,
+          });
+          await tenant.save();
+
+          return res.status(200).json({
+            action: "scheduled_change",
+            message: `${plan.name} will start after the current billing cycle ends.`,
+            ...buildTenantAccessPayload(tenant),
+          });
+        }
+
+        if (!isSamePlan && isRestartableCheckout) {
+          const cancelledSubscription = await cancelRazorpaySubscription(existingSubscription.id, false);
+          applyTenantSubscriptionSnapshot({
+            tenant,
+            subscriptionEntity: cancelledSubscription,
+            plan: await resolvePlanForSubscription({ razorpayPlanId: existingPlanId }),
+            cancelAtPeriodEnd: false,
+          });
+          clearScheduledSubscriptionChanges(tenant);
+          await tenant.save();
+        }
+
+        if (isSamePlan && isRestartableCheckout) {
+          const reusableTransaction = await getReusableCheckoutTransaction({
+            subscriptionId: existingSubscription.id,
+            tenantId: tenant.tenantId,
+          });
+          const checkoutResponse = buildCheckoutResponse({
+            tenant,
+            subscription: existingSubscription,
+            transaction: reusableTransaction,
+            statusCode: 200,
+            action: "checkout",
+            message: "Continue the pending mandate setup for this plan.",
+          });
+          return res.status(checkoutResponse.statusCode).json(checkoutResponse.payload);
+        }
+      }
+    }
+
     const subscription = await callRazorpayApi("/subscriptions", {
       method: "POST",
       body: JSON.stringify({
@@ -479,6 +758,13 @@ export const createSubscriptionCheckoutOrder = async (req: AuthRequest, res: Res
       amount: plan.amount,
       currency: plan.currency || "INR",
       autoPayEnabled: false,
+      cancelAtPeriodEnd: false,
+      pendingPlanCode: "",
+      pendingPlanLabel: "",
+      pendingBillingCycle: "",
+      pendingAmount: 0,
+      pendingCurrency: "",
+      pendingChangeEffectiveAt: null,
       gatewayStatus: String(subscription.status || "").toLowerCase(),
       razorpayPlanId,
       razorpaySubscriptionId: subscription.id,
@@ -510,31 +796,63 @@ export const createSubscriptionCheckoutOrder = async (req: AuthRequest, res: Res
       },
     });
 
-    return res.status(201).json({
-      keyId: RAZORPAY_KEY_ID,
-      subscription: {
-        id: subscription.id,
-        status: subscription.status,
-        shortUrl: subscription.short_url || "",
-      },
-      transaction: {
-        id: transaction._id,
-        planCode: transaction.planCode,
-        planName: transaction.planName,
-        amount: transaction.amount,
-        currency: transaction.currency,
-      },
-      tenant: {
-        name: tenant.name,
-        email: tenant.email,
-        contact: "",
-      },
+    const checkoutResponse = buildCheckoutResponse({
+      tenant,
+      subscription,
+      transaction,
+      statusCode: 201,
+      action: "checkout",
     });
+
+    return res.status(checkoutResponse.statusCode).json(checkoutResponse.payload);
   } catch (error: any) {
     return res.status(500).json({
       message: "Failed to create autopay subscription",
       details: error?.message || "",
       error: error || "",
+    });
+  }
+};
+
+export const cancelSubscriptionAutopay = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ message: "Razorpay is not configured on the server." });
+    }
+
+    const tenant = await Tenant.findOne({ tenantId: req.user?.tenantId });
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found" });
+    }
+
+    const subscriptionId = String(tenant.subscription?.razorpaySubscriptionId || "");
+    if (!subscriptionId) {
+      return res.status(400).json({ message: "No active autopay subscription found." });
+    }
+
+    const cancelledSubscription = await cancelRazorpaySubscription(subscriptionId, true);
+    const plan = await resolvePlanForSubscription({
+      planCode: tenant.subscription?.planCode || "",
+      razorpayPlanId: cancelledSubscription?.plan_id,
+    });
+
+    clearScheduledSubscriptionChanges(tenant);
+    applyTenantSubscriptionSnapshot({
+      tenant,
+      subscriptionEntity: cancelledSubscription,
+      plan,
+      cancelAtPeriodEnd: true,
+    });
+    await tenant.save();
+
+    return res.json({
+      message: "Autopay will stop at the end of the current billing cycle.",
+      ...buildTenantAccessPayload(tenant),
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      message: "Failed to stop autopay",
+      details: error?.message || "",
     });
   }
 };
