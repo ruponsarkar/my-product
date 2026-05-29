@@ -29,6 +29,7 @@ import {
   formatBillingCurrency,
   formatBillingDate,
 } from "../../utils/billing";
+import { heroBodySx, heroCardPaddingSx, heroTitleSx } from "../../utils/pageHero";
 
 const cardSx = {
   borderRadius: 5,
@@ -109,7 +110,7 @@ export default function BillingTransactionsPage() {
         sx={{
           ...cardSx,
           mb: 3,
-          p: { xs: 2.5, md: 4 },
+          p: heroCardPaddingSx,
           background:
             "radial-gradient(circle at top left, rgba(20, 184, 166, 0.14), transparent 34%), linear-gradient(135deg, #0f172a 0%, #102a43 52%, #134e4a 100%)",
           color: "#fff",
@@ -128,10 +129,10 @@ export default function BillingTransactionsPage() {
                 backgroundColor: "rgba(255,255,255,0.06)",
               }}
             />
-            <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.04em" }}>
+            <Typography variant="h4" sx={heroTitleSx}>
               Subscription transactions
             </Typography>
-            <Typography sx={{ mt: 1.25, maxWidth: 700, color: "rgba(255,255,255,0.8)", lineHeight: 1.7 }}>
+            <Typography sx={{ ...heroBodySx, color: "rgba(255,255,255,0.8)" }}>
               Review completed and pending subscription charges, then download invoices for paid billing records.
             </Typography>
           </Box>

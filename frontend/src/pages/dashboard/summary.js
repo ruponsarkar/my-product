@@ -35,6 +35,7 @@ import {
   YAxis,
 } from "recharts";
 import { dashboardOverview } from "../../api/services/product/anakyticsApi";
+import { heroBodySx, heroCardPaddingSx, heroTitleSx } from "../../utils/pageHero";
 
 const currencyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -311,7 +312,7 @@ export default function Summary() {
           background:
             "radial-gradient(circle at top left, rgba(13, 148, 136, 0.18), transparent 35%), linear-gradient(135deg, #0f172a 0%, #102a43 48%, #0f766e 100%)",
           color: "#fff",
-          p: { xs: 2.5, md: 4 },
+          p: heroCardPaddingSx,
           mb: 3,
         }}
       >
@@ -327,12 +328,12 @@ export default function Summary() {
                 backgroundColor: "rgba(255,255,255,0.06)",
               }}
             />
-            <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: "-0.05em", maxWidth: 700 }}>
+            <Typography variant="h3" sx={{ ...heroTitleSx, maxWidth: 700 }}>
               Professional visibility into sales, cash flow, staff performance, and stock risk.
             </Typography>
             <Typography
               variant="body1"
-              sx={{ mt: 1.75, maxWidth: 680, color: "rgba(255,255,255,0.78)", lineHeight: 1.7 }}
+              sx={{ ...heroBodySx, maxWidth: 680, color: "rgba(255,255,255,0.78)" }}
             >
               Track revenue trends, understand payment behavior, spot your best-selling products, and act on
               inventory alerts without jumping across multiple reports.

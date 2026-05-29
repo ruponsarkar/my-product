@@ -14,6 +14,7 @@ import {
   useMediaQuery,
   useTheme,
   Button,
+  Chip,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -29,10 +30,11 @@ import {
   ReceiptLong as ReceiptLongIcon,
   Logout as LogoutIcon,
   Storefront as StorefrontIcon,
+  VerifiedUser,
 } from "@mui/icons-material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logoutAPI } from "../../api/services/auth/logout";
-import { clearAuthData, getStoredUser } from "../../utils/auth";
+import { clearAuthData, getStoredTenant, getStoredUser } from "../../utils/auth";
 
 const drawerWidth = 240;
 const collapsedWidth = 76;
@@ -45,6 +47,35 @@ const Sidebar = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentUser = getStoredUser();
+  const tenant = getStoredTenant();
+  const subscription = tenant?.subscription || {};
+
+  const subscriptionMeta = React.useMemo(() => {
+    const status = String(subscription?.status || "").toLowerCase();
+    const expirySource =
+      subscription?.status === "trialing"
+        ? subscription?.trialEndsAt
+        : subscription?.currentPeriodEnd || subscription?.trialEndsAt;
+    const expiryDate = expirySource ? new Date(expirySource) : null;
+    const hasValidExpiry = Boolean(expiryDate && !Number.isNaN(expiryDate.getTime()));
+    const daysRemaining = hasValidExpiry
+      ? Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : null;
+    const isExpired =
+      status === "expired" ||
+      status === "cancelled" ||
+      status === "past_due" ||
+      (typeof daysRemaining === "number" && daysRemaining < 0);
+
+    return {
+      label: isExpired ? "Expired" : "Active",
+      color: isExpired ? "error" : "success",
+      countdown:
+        !isExpired && typeof daysRemaining === "number" && daysRemaining >= 0 && daysRemaining < 5
+          ? `Expires in ${daysRemaining === 0 ? "today" : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`}`
+          : "",
+    };
+  }, [subscription?.currentPeriodEnd, subscription?.status, subscription?.trialEndsAt]);
 
   const handleToggleSidebar = () => {
     setOpen(!open);
@@ -79,18 +110,18 @@ const Sidebar = ({ children }) => {
         { text: "View Products", path: "/ViewProducts" },
       ],
     },
-    { text: "Analytics", icon: <BarChartIcon />, path: "/Analytics" },
-    { text: "Orders", icon: <ReceiptLongIcon />, path: "/orders" },
-    { text: "Billing", icon: <ReceiptLongIcon />, path: "/billing" },
     { text: "POS", icon: <PointOfSaleIcon />, path: "/ViewProducts" },
+    { text: "Orders", icon: <ReceiptLongIcon />, path: "/orders" },
+    { text: "Analytics", icon: <BarChartIcon />, path: "/Analytics" },
    
     ...(currentUser?.role === "admin"
       ? [
           { text: "Reports", icon: <AssessmentIcon />, path: "/reports" },
-          { text: "Users", icon: <SettingsIcon />, path: "/users" },
+          { text: "Users", icon: <VerifiedUser />, path: "/users" },
           { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
        ]
       : []),
+      { text: "Billing", icon: <ReceiptLongIcon />, path: "/billing" },
        { text: "Profile", icon: <PersonIcon />, path: "/profile" },
   ];
 
@@ -387,7 +418,27 @@ const Sidebar = ({ children }) => {
                 </Typography>
               </Box>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <Chip
+                  label={subscriptionMeta.label}
+                  color={subscriptionMeta.color}
+                  size="small"
+                  sx={{ fontWeight: 700 }}
+                />
+                {subscriptionMeta.countdown ? (
+                  <Chip
+                    label={subscriptionMeta.countdown}
+                    size="small"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#9a3412",
+                      backgroundColor: "#ffedd5",
+                      border: "1px solid #fdba74",
+                    }}
+                  />
+                ) : null}
+              </Box>
               {currentUser?.email && (
                 <Box
                   sx={{

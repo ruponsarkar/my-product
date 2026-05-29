@@ -30,6 +30,7 @@ import {
   formatBillingDate,
   loadRazorpayScript,
 } from "../../utils/billing";
+import { heroBodySx, heroCardPaddingSx, heroTitleSx } from "../../utils/pageHero";
 
 const cardSx = {
   borderRadius: 5,
@@ -82,6 +83,7 @@ export default function BillingPage() {
   const subscription = data?.tenant?.subscription || {};
   const plans = data?.plans || [];
   const recentTransactions = data?.recentTransactions || [];
+  const isExpiredState = ["expired", "past_due", "cancelled"].includes(String(subscription.status || "").toLowerCase());
 
   const getPlanIntervalLabel = (plan) => {
     if (plan.interval === "weekly") {
@@ -244,10 +246,12 @@ export default function BillingPage() {
         sx={{
           ...cardSx,
           mb: 3,
-          p: { xs: 2.5, md: 4 },
+          p: heroCardPaddingSx,
           overflow: "hidden",
           background:
-            "radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 34%), linear-gradient(135deg, #0f172a 0%, #102a43 52%, #0f766e 100%)",
+            isExpiredState
+              ? "radial-gradient(circle at top left, rgba(248, 113, 113, 0.18), transparent 34%), linear-gradient(135deg, #450a0a 0%, #7f1d1d 52%, #991b1b 100%)"
+              : "radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 34%), linear-gradient(135deg, #0f172a 0%, #102a43 52%, #0f766e 100%)",
           color: "#fff",
         }}
       >
@@ -259,19 +263,28 @@ export default function BillingPage() {
               size="small"
               sx={{
                 mb: 2,
-                color: "#ccfbf1",
-                border: "1px solid rgba(204, 251, 241, 0.24)",
+                color: isExpiredState ? "#fee2e2" : "#ccfbf1",
+                border: isExpiredState
+                  ? "1px solid rgba(254, 226, 226, 0.3)"
+                  : "1px solid rgba(204, 251, 241, 0.24)",
                 backgroundColor: "rgba(255,255,255,0.06)",
               }}
             />
-            <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: "-0.05em" }}>
+            <Typography variant="h3" sx={heroTitleSx}>
               Manage your plan, renew access, and download billing records.
             </Typography>
-            <Typography sx={{ mt: 1.5, maxWidth: 700, color: "rgba(255,255,255,0.8)", lineHeight: 1.7 }}>
+            <Typography sx={{ ...heroBodySx, color: isExpiredState ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.8)" }}>
               Limited accounts can still use the dashboard and product catalog, but plan activation unlocks
               editing, orders, analytics, settings, and user management.
             </Typography>
-            <Typography sx={{ mt: 1.1, maxWidth: 700, color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
+            <Typography
+              sx={{
+                ...heroBodySx,
+                mt: { xs: 0.75, md: 1 },
+                color: isExpiredState ? "rgba(254,226,226,0.92)" : "rgba(255,255,255,0.72)",
+                display: { xs: "none", md: "block" },
+              }}
+            >
               Paid plans use Razorpay autopay, so future renewals are collected automatically until the mandate is cancelled.
             </Typography>
           </Box>
@@ -293,12 +306,26 @@ export default function BillingPage() {
                 }}
               />
             ) : null}
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.82)" }}>
+            <Typography variant="body2" sx={{ color: isExpiredState ? "#fee2e2" : "rgba(255,255,255,0.82)" }}>
               {subscriptionHeadline}
             </Typography>
           </Stack>
         </Stack>
       </Paper>
+
+      {isExpiredState ? (
+        <Alert
+          severity="error"
+          sx={{
+            mb: 3,
+            borderRadius: 3,
+            border: "1px solid rgba(248, 113, 113, 0.3)",
+            backgroundColor: "#fef2f2",
+          }}
+        >
+          Your paid access is currently expired. Reactivate a plan below to unlock editing, orders, analytics, settings, and team management again.
+        </Alert>
+      ) : null}
 
       {error ? (
         <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
@@ -319,7 +346,17 @@ export default function BillingPage() {
           mb: 3,
         }}
       >
-        <Paper elevation={0} sx={{ ...cardSx, p: { xs: 2.5, md: 3 } }}>
+        <Paper
+          elevation={0}
+          sx={{
+            ...cardSx,
+            p: { xs: 2.5, md: 3 },
+            border: isExpiredState
+              ? "1px solid rgba(248, 113, 113, 0.22)"
+              : "1px solid rgba(15, 23, 42, 0.08)",
+            backgroundColor: isExpiredState ? "#fff7f7" : "#ffffff",
+          }}
+        >
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
             <BoltRoundedIcon sx={{ color: "#0f766e" }} />
             <Typography variant="h6" sx={{ fontWeight: 800 }}>
@@ -333,7 +370,7 @@ export default function BillingPage() {
               gap: 2,
             }}
           >
-            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: "#f8fafc" }}>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: isExpiredState ? "#fef2f2" : "#f8fafc" }}>
               <Typography variant="body2" sx={{ color: "#64748b" }}>
                 Plan
               </Typography>
@@ -341,7 +378,7 @@ export default function BillingPage() {
                 {subscription.planLabel || "Free Trial"}
               </Typography>
             </Paper>
-            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: "#f8fafc" }}>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: isExpiredState ? "#fef2f2" : "#f8fafc" }}>
               <Typography variant="body2" sx={{ color: "#64748b" }}>
                 Billing cycle
               </Typography>
@@ -349,7 +386,7 @@ export default function BillingPage() {
                 {subscription.billingCycle || "trial"}
               </Typography>
             </Paper>
-            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: "#f8fafc" }}>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: isExpiredState ? "#fef2f2" : "#f8fafc" }}>
               <Typography variant="body2" sx={{ color: "#64748b" }}>
                 Renewal value
               </Typography>
@@ -357,7 +394,7 @@ export default function BillingPage() {
                 {formatBillingCurrency(subscription.amount, subscription.currency)}
               </Typography>
             </Paper>
-            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: "#f8fafc" }}>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 4, backgroundColor: isExpiredState ? "#fef2f2" : "#f8fafc" }}>
               <Typography variant="body2" sx={{ color: "#64748b" }}>
                 Autopay
               </Typography>

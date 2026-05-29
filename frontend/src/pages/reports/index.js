@@ -39,6 +39,7 @@ import {
   topSellingProducts,
 } from "../../api/services/product/anakyticsApi";
 import { getProducts } from "../../api/services/product/productApi";
+import { heroBodySx, heroCardPaddingSx, heroTitleSx } from "../../utils/pageHero";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -729,7 +730,7 @@ export default function Reports() {
           mb: 3,
         }}
       >
-        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+        <CardContent sx={{ p: heroCardPaddingSx }}>
           <Stack
             direction={{ xs: "column", lg: "row" }}
             justifyContent="space-between"
@@ -747,10 +748,10 @@ export default function Reports() {
                   fontWeight: 700,
                 }}
               />
-              <Typography variant="h4" sx={{ fontWeight: 900, lineHeight: 1.1, mb: 1.5 }}>
+              <Typography variant="h4" sx={{ ...heroTitleSx, mb: 1 }}>
                 Reports dashboard for review, audit, and download
               </Typography>
-              <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.84)", maxWidth: 680 }}>
+              <Typography variant="body1" sx={{ ...heroBodySx, mt: 0, color: "rgba(255,255,255,0.84)", maxWidth: 680 }}>
                 See every report already available in the system, preview the underlying data, and export it for finance, stock planning, operations, or management review.
               </Typography>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 2.5 }}>
