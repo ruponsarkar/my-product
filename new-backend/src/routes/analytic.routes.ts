@@ -15,7 +15,7 @@ import { requireSubscriptionFeature } from "../middlewares/subscription.middlewa
 
 const router = Router();
 
-router.get("/dashboard", authMiddleware, requireSubscriptionFeature("dashboard.view"), dashboardOverview);
+router.get("/dashboard", authMiddleware, requireSubscriptionFeature("analytics.view"), dashboardOverview);
 router.get("/summary", authMiddleware, requireSubscriptionFeature("analytics.view"), totalSalesSummary);
 router.get("/sales-by-date", authMiddleware, requireSubscriptionFeature("analytics.view"), salesByDate); //sales-by-date?type=daily    sales-by-date?type=monthly
 router.get("/payment-breakdown", authMiddleware, requireSubscriptionFeature("analytics.view"), paymentBreakdown);
