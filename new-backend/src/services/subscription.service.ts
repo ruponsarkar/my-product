@@ -180,7 +180,8 @@ export const getTenantAccessState = (tenant: ITenant) => {
     subscription.status === "active" &&
     (!currentPeriodEnd || currentPeriodEnd.getTime() >= now.getTime());
 
-  const hasFullAccess = isTrialActive || isPaidActive;
+  const isExtended = Boolean(tenant.accessExtendedUntil && new Date(tenant.accessExtendedUntil).getTime() > now.getTime());
+  const hasFullAccess = isTrialActive || isPaidActive || isExtended;
   const featureAccess = hasFullAccess ? [...FULL_ACCESS_FEATURES] : [...LIMITED_ACCESS_FEATURES];
 
   return {
@@ -188,6 +189,7 @@ export const getTenantAccessState = (tenant: ITenant) => {
     hasLimitedAccess: !hasFullAccess,
     features: featureAccess,
     subscription: {
+      accessExtendedUntil: tenant.accessExtendedUntil || null,
       status:
         hasFullAccess
           ? subscription.status
@@ -255,7 +257,7 @@ export const ensureDefaultSubscriptionPlans = async () => {
     DEFAULT_SUBSCRIPTION_PLANS.map((plan) =>
       SubscriptionPlan.updateOne(
         { code: plan.code },
-        { $set: plan },
+        { $setOnInsert: plan },
         { upsert: true }
       )
     )
@@ -264,12 +266,12 @@ export const ensureDefaultSubscriptionPlans = async () => {
 
 export const getSubscriptionPlans = async () => {
   await ensureDefaultSubscriptionPlans();
-  return SubscriptionPlan.find({ isActive: true }).sort({ amount: 1 }).lean();
+  return SubscriptionPlan.find({ isActive: true, deletedAt: null }).sort({ amount: 1 }).lean();
 };
 
 export const getSubscriptionPlanByCode = async (code: string) => {
   await ensureDefaultSubscriptionPlans();
-  return SubscriptionPlan.findOne({ code, isActive: true });
+  return SubscriptionPlan.findOne({ code, isActive: true, deletedAt: null });
 };
 
 export const activateTenantPlan = async (tenant: ITenant, plan: ISubscriptionPlan, paidAt = new Date()) => {

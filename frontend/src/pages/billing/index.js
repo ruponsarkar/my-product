@@ -80,10 +80,14 @@ export default function BillingPage() {
     loadOverview();
   }, []);
 
-  const subscription = data?.tenant?.subscription || {};
+  const subscription = useMemo(() => data?.tenant?.subscription || {}, [data]);
   const plans = data?.plans || [];
   const recentTransactions = data?.recentTransactions || [];
-  const isExpiredState = ["expired", "past_due", "cancelled"].includes(String(subscription.status || "").toLowerCase());
+  const billingExpired = ["expired", "past_due", "cancelled"].includes(String(subscription.status || "").toLowerCase()) ||
+    (subscription.status === "trialing" && new Date(subscription.trialEndsAt || 0).getTime() < Date.now()) ||
+    (subscription.status === "active" && subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd).getTime() < Date.now());
+  const hasExtendedAccess = Boolean(billingExpired && new Date(subscription.accessExtendedUntil || 0).getTime() > Date.now());
+  const isExpiredState = billingExpired && !data?.access?.hasFullAccess && !hasExtendedAccess;
 
   const getPlanIntervalLabel = (plan) => {
     if (plan.interval === "weekly") {
@@ -94,6 +98,9 @@ export default function BillingPage() {
   };
 
   const subscriptionHeadline = useMemo(() => {
+    if (hasExtendedAccess) {
+      return `Access extended until ${formatBillingDate(subscription.accessExtendedUntil)}. Your payment schedule is unchanged.`;
+    }
     if (subscription.pendingPlanLabel && subscription.pendingChangeEffectiveAt) {
       return `${subscription.pendingPlanLabel} is scheduled to start on ${formatBillingDate(subscription.pendingChangeEffectiveAt)}.`;
     }
@@ -110,7 +117,7 @@ export default function BillingPage() {
       return `${subscription.planLabel || "Paid plan"} active until ${formatBillingDate(subscription.currentPeriodEnd)}`;
     }
     return "Your workspace is in limited-access mode until a plan is activated.";
-  }, [subscription]);
+  }, [subscription, hasExtendedAccess]);
 
   const handleInvoiceDownload = async (invoiceNumber) => {
     try {
@@ -289,6 +296,7 @@ export default function BillingPage() {
             </Typography>
           </Box>
           <Stack spacing={1} alignItems={{ xs: "flex-start", lg: "flex-end" }}>
+            {hasExtendedAccess && <Chip label="Access extended" color="success" sx={{ fontWeight: 700 }} />}
             <Chip
               label={String(subscription.status || "unknown").replace("_", " ")}
               color={statusColorMap[subscription.status] || "default"}
@@ -313,6 +321,9 @@ export default function BillingPage() {
         </Stack>
       </Paper>
 
+      {hasExtendedAccess && <Alert severity="success" sx={{ mb: 3, borderRadius: 3 }}>
+        Access extended until {formatBillingDate(subscription.accessExtendedUntil)}. You can continue using your workspace. Billing status and payment dates remain unchanged.
+      </Alert>}
       {isExpiredState ? (
         <Alert
           severity="error"

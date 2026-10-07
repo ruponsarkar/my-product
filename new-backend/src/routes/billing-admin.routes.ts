@@ -1,0 +1,15 @@
+import { Router } from "express";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import { requireBillingAdmin } from "../middlewares/billing-admin.middleware";
+import { adminDeletePlan, adminExtendTenant, adminListPlans, adminListTenants, adminSavePlan, billingCapabilities } from "../controllers/billing-admin.controller";
+const router = Router();
+router.use(authMiddleware);
+router.get("/capabilities", billingCapabilities);
+router.use(requireBillingAdmin);
+router.get("/plans", adminListPlans);
+router.post("/plans", adminSavePlan);
+router.patch("/plans/:code", adminSavePlan);
+router.delete("/plans/:code", adminDeletePlan);
+router.get("/tenants", adminListTenants);
+router.post("/tenants/:tenantId/extend", adminExtendTenant);
+export default router;

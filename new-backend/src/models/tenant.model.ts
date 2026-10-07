@@ -10,9 +10,11 @@ export interface ITenant extends Document {
   dbName: string;
   settings: Record<string, any>;
   status: 'active' | 'inactive';
+  accessExtendedUntil?: Date | null;
+  accessExtensions?: { days: number; reason: string; actor: string; createdAt: Date; until: Date }[];
   subscription?: {
     status?: 'trialing' | 'active' | 'expired' | 'cancelled' | 'past_due';
-    planCode?: 'trial' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+    planCode?: string;
     planLabel?: string;
     billingCycle?: 'trial' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
     amount?: number;
@@ -30,7 +32,7 @@ export interface ITenant extends Document {
     razorpaySubscriptionId?: string;
     razorpayCustomerId?: string;
     cancelAtPeriodEnd?: boolean;
-    pendingPlanCode?: 'weekly' | 'monthly' | 'quarterly' | 'yearly' | '';
+    pendingPlanCode?: string;
     pendingPlanLabel?: string;
     pendingBillingCycle?: 'weekly' | 'monthly' | 'quarterly' | 'yearly' | '';
     pendingAmount?: number;
@@ -51,7 +53,6 @@ const TenantSubscriptionSchema = new Schema(
     },
     planCode: {
       type: String,
-      enum: ['trial', 'weekly', 'monthly', 'quarterly', 'yearly'],
       default: 'trial',
     },
     planLabel: { type: String, default: 'Free Trial' },
@@ -96,6 +97,8 @@ const TenantSchema = new Schema<ITenant>(
     dbName: { type: String, required: true, unique: true, index: true },
     settings: { type: Schema.Types.Mixed, default: {} },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    accessExtendedUntil: { type: Date, default: null },
+    accessExtensions: [{ days: Number, reason: String, actor: String, createdAt: Date, until: Date }],
     subscription: { type: TenantSubscriptionSchema, default: () => ({}) },
   },
   { timestamps: true }

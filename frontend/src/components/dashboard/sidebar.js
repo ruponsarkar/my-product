@@ -33,13 +33,23 @@ import {
   VerifiedUser,
 } from "@mui/icons-material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { formatBillingDate } from "../../utils/billing";
+import { getBillingAdminCapabilities } from "../../api/services/subscription/billingAdminApi";
 import { logoutAPI } from "../../api/services/auth/logout";
-import { clearAuthData, getStoredTenant, getStoredUser } from "../../utils/auth";
+import { clearAuthData, getStoredAccess, getStoredTenant, getStoredUser } from "../../utils/auth";
 
 const drawerWidth = 240;
 const collapsedWidth = 76;
 
 const Sidebar = ({ children }) => {
+  const [canManageBilling, setCanManageBilling] = useState(false);
+  React.useEffect(() => {
+    let mounted = true;
+    getBillingAdminCapabilities().then(({ data }) => {
+      if (mounted) setCanManageBilling(data.canManageBilling === true);
+    }).catch(() => { if (mounted) setCanManageBilling(false); });
+    return () => { mounted = false; };
+  }, []);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [open, setOpen] = useState(!isMobile);
@@ -49,6 +59,7 @@ const Sidebar = ({ children }) => {
   const currentUser = getStoredUser();
   const tenant = getStoredTenant();
   const subscription = tenant?.subscription || {};
+  const access = getStoredAccess();
 
   const subscriptionMeta = React.useMemo(() => {
     const status = String(subscription?.status || "").toLowerCase();
@@ -67,15 +78,19 @@ const Sidebar = ({ children }) => {
       status === "past_due" ||
       (typeof daysRemaining === "number" && daysRemaining < 0);
 
+    const extensionActive = new Date(subscription.accessExtendedUntil || 0).getTime() > Date.now();
+    const extendedAccess = extensionActive && isExpired;
+    const accessExpired = isExpired && !access?.hasFullAccess && !extensionActive;
     return {
-      label: isExpired ? "Expired" : "Active",
-      color: isExpired ? "error" : "success",
+      label: extendedAccess ? "Access extended" : accessExpired ? "Expired" : "Active",
+      color: accessExpired ? "error" : "success",
+      title: extendedAccess ? `Access extended until ${formatBillingDate(subscription.accessExtendedUntil)}` : undefined,
       countdown:
         !isExpired && typeof daysRemaining === "number" && daysRemaining >= 0 && daysRemaining < 5
           ? `Expires in ${daysRemaining === 0 ? "today" : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`}`
           : "",
     };
-  }, [subscription?.currentPeriodEnd, subscription?.status, subscription?.trialEndsAt]);
+  }, [subscription?.currentPeriodEnd, subscription?.status, subscription?.trialEndsAt, subscription?.accessExtendedUntil, access?.hasFullAccess]);
 
   const handleToggleSidebar = () => {
     setOpen(!open);
@@ -121,6 +136,7 @@ const Sidebar = ({ children }) => {
           { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
        ]
       : []),
+      ...(canManageBilling ? [{ text: "Billing administration", icon: <VerifiedUser />, path: "/billing-admin" }] : []),
       { text: "Billing", icon: <ReceiptLongIcon />, path: "/billing" },
        { text: "Profile", icon: <PersonIcon />, path: "/profile" },
   ];
@@ -422,10 +438,12 @@ const Sidebar = ({ children }) => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <Chip
                   label={subscriptionMeta.label}
+                  title={subscriptionMeta.title}
                   color={subscriptionMeta.color}
                   size="small"
                   sx={{ fontWeight: 700 }}
                 />
+                {subscriptionMeta.title ? <Typography variant="caption" sx={{ color: "#475569", maxWidth: 210 }}>{subscriptionMeta.title}</Typography> : null}
                 {subscriptionMeta.countdown ? (
                   <Chip
                     label={subscriptionMeta.countdown}

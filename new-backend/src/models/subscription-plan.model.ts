@@ -1,7 +1,7 @@
 import { Document, Schema, model } from "mongoose";
 
 export interface ISubscriptionPlan extends Document {
-  code: "weekly" | "monthly" | "quarterly" | "yearly";
+  code: string;
   name: string;
   interval: "weekly" | "monthly" | "quarterly" | "yearly";
   amount: number;
@@ -11,6 +11,9 @@ export interface ISubscriptionPlan extends Document {
   description?: string;
   razorpayPlanId?: string;
   isActive: boolean;
+  deletedAt?: Date | null;
+  previousRazorpayPlanIds?: string[];
+  retiredGatewayPlans?: any[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -19,7 +22,6 @@ const SubscriptionPlanSchema = new Schema<ISubscriptionPlan>(
   {
     code: {
       type: String,
-      enum: ["weekly", "monthly", "quarterly", "yearly"],
       required: true,
       unique: true,
       index: true,
@@ -36,6 +38,9 @@ const SubscriptionPlanSchema = new Schema<ISubscriptionPlan>(
     durationInDays: { type: Number, min: 1 },
     description: { type: String, default: "" },
     razorpayPlanId: { type: String, default: "", index: true, sparse: true },
+    deletedAt: { type: Date, default: null },
+    retiredGatewayPlans: { type: [Schema.Types.Mixed], default: [] },
+    previousRazorpayPlanIds: { type: [String], default: [] },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

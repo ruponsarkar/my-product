@@ -298,9 +298,10 @@ const resolvePlanForSubscription = async ({
   razorpayPlanId?: string;
 }) => {
   if (razorpayPlanId) {
-    const planByGatewayId = await SubscriptionPlan.findOne({ razorpayPlanId });
+    const planByGatewayId = await SubscriptionPlan.findOne({ $or: [{ razorpayPlanId }, { previousRazorpayPlanIds: razorpayPlanId }] });
     if (planByGatewayId) {
-      return planByGatewayId;
+      const retired = planByGatewayId.retiredGatewayPlans?.find((entry: any) => entry.razorpayPlanId === razorpayPlanId);
+      return retired ? { ...planByGatewayId.toObject(), ...retired } : planByGatewayId;
     }
   }
 

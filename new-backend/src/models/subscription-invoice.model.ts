@@ -5,7 +5,7 @@ export interface ISubscriptionInvoice extends Document {
   tenantId: string;
   transaction: Types.ObjectId;
   invoiceNumber: string;
-  planCode: "weekly" | "monthly" | "quarterly" | "yearly";
+  planCode: string;
   planName: string;
   billingCycle: "weekly" | "monthly" | "quarterly" | "yearly";
   amount: number;
@@ -33,7 +33,6 @@ const SubscriptionInvoiceSchema = new Schema<ISubscriptionInvoice>(
     invoiceNumber: { type: String, required: true, unique: true, index: true },
     planCode: {
       type: String,
-      enum: ["weekly", "monthly", "quarterly", "yearly"],
       required: true,
     },
     planName: { type: String, required: true },

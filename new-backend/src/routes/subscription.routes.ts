@@ -1,3 +1,4 @@
+import billingAdminRoutes from "./billing-admin.routes";
 import { Router } from "express";
 import { authMiddleware, authorizeRoles } from "../middlewares/auth.middleware";
 import {
@@ -13,6 +14,7 @@ import {
 import { requireSubscriptionFeature } from "../middlewares/subscription.middleware";
 
 const router = Router();
+router.use("/admin", billingAdminRoutes);
 
 router.post("/webhook", handleSubscriptionWebhook);
 router.get("/overview", authMiddleware, requireSubscriptionFeature("billing.manage"), getSubscriptionOverview);

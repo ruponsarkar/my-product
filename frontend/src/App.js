@@ -21,6 +21,7 @@ import Users from "./pages/users";
 import Orders from "./pages/orders";
 import Settings from "./pages/settings";
 import Profile from "./pages/profile";
+import BillingAdminPage from "./pages/billing-admin";
 import BillingPage from "./pages/billing";
 import BillingTransactionsPage from "./pages/billing/transactions";
 
@@ -32,7 +33,7 @@ function App() {
       <BrowserRouter>
         <Box sx={{ display: "flex" }}>
           {/* <Sidebar /> */}
-          <Box component="main" sx={{ flexGrow: 1,  }}>
+          <Box component="main" sx={{ flexGrow: 1, minWidth: 0, width: "100%" }}>
             {/* <Toolbar /> */}
             <Routes>
               <Route path="/" element={withProtection(<Sidebar> <Dashboard /> </Sidebar>)} />
@@ -49,6 +50,7 @@ function App() {
               <Route path="/users" element={withProtection(<Sidebar>  <Users /> </Sidebar>)} />
               <Route path="/settings" element={withProtection(<Sidebar>  <Settings /> </Sidebar>)} />
               <Route path="/reports" element={withProtection(<Sidebar>  <Reports /> </Sidebar>)} />
+              <Route path="/billing-admin" element={withProtection(<Sidebar><BillingAdminPage /></Sidebar>)} />
               <Route path="/billing" element={withProtection(<Sidebar>  <BillingPage /> </Sidebar>)} />
               <Route path="/billing/transactions" element={withProtection(<Sidebar>  <BillingTransactionsPage /> </Sidebar>)} />
 

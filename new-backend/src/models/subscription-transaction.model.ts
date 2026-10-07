@@ -3,7 +3,7 @@ import { Document, Schema, Types, model } from "mongoose";
 export interface ISubscriptionTransaction extends Document {
   tenant: Types.ObjectId;
   tenantId: string;
-  planCode: "weekly" | "monthly" | "quarterly" | "yearly";
+  planCode: string;
   planName: string;
   billingCycle: "weekly" | "monthly" | "quarterly" | "yearly";
   amount: number;
@@ -35,7 +35,6 @@ const SubscriptionTransactionSchema = new Schema<ISubscriptionTransaction>(
     tenantId: { type: String, required: true, index: true },
     planCode: {
       type: String,
-      enum: ["weekly", "monthly", "quarterly", "yearly"],
       required: true,
     },
     planName: { type: String, required: true },
